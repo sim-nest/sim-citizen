@@ -3,6 +3,7 @@
 use std::convert::TryFrom;
 
 use sim_kernel::{CapabilityName, Cx, Error, Expr, NumberLiteral, Result, Symbol, Value};
+use sim_value::kind::expr_kind;
 
 /// Encodes and decodes a Rust type as one citizen constructor field.
 ///
@@ -352,29 +353,5 @@ fn canonical_f64(value: f64) -> String {
         "-inf".to_owned()
     } else {
         value.to_string()
-    }
-}
-
-fn expr_kind(expr: &Expr) -> &'static str {
-    match expr {
-        Expr::Nil => "nil",
-        Expr::Bool(_) => "bool",
-        Expr::Number(_) => "number",
-        Expr::Symbol(_) => "symbol",
-        Expr::Local(_) => "local",
-        Expr::String(_) => "string",
-        Expr::Bytes(_) => "bytes",
-        Expr::List(_) => "list",
-        Expr::Vector(_) => "vector",
-        Expr::Map(_) => "map",
-        Expr::Set(_) => "set",
-        Expr::Call { .. } => "call",
-        Expr::Infix { .. } => "infix",
-        Expr::Prefix { .. } => "prefix",
-        Expr::Postfix { .. } => "postfix",
-        Expr::Block(_) => "block",
-        Expr::Quote { .. } => "quote",
-        Expr::Annotated { .. } => "annotated",
-        Expr::Extension { .. } => "extension",
     }
 }
