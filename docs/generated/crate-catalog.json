@@ -1,0 +1,42 @@
+{
+  "generator": "xtask crate-catalog v1",
+  "package_count": 3,
+  "packages": [
+    {
+      "description": "Proc macros for SIM citizen values.",
+      "generated_readme": true,
+      "manifest": "crates/sim-citizen-derive/Cargo.toml",
+      "name": "sim-citizen-derive",
+      "publish": "true",
+      "readme": "crates/sim-citizen-derive/README.md",
+      "root": "crates/sim-citizen-derive",
+      "target_kinds": [
+        "proc-macro"
+      ]
+    },
+    {
+      "description": "Citizen support outside the SIM kernel.",
+      "generated_readme": true,
+      "manifest": "crates/sim-citizen/Cargo.toml",
+      "name": "sim-citizen",
+      "publish": "true",
+      "readme": "crates/sim-citizen/README.md",
+      "root": "crates/sim-citizen",
+      "target_kinds": [
+        "lib"
+      ]
+    },
+    {
+      "description": "SIM workspace package for xtask.",
+      "generated_readme": true,
+      "manifest": "xtask/Cargo.toml",
+      "name": "xtask",
+      "publish": "false",
+      "readme": "xtask/README.md",
+      "root": "xtask",
+      "target_kinds": [
+        "bin"
+      ]
+    }
+  ]
+}

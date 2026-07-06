@@ -7,7 +7,7 @@ Proc macros for SIM citizen values.
 ## Package Metadata
 
 - Manifest: `crates/sim-citizen-derive/Cargo.toml`
-- Publish: `false`
+- Publish: `true`
 - Targets: `proc-macro`
 
 ## Crate Documentation

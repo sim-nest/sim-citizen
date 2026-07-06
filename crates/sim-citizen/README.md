@@ -7,7 +7,7 @@ Citizen support outside the SIM kernel.
 ## Package Metadata
 
 - Manifest: `crates/sim-citizen/Cargo.toml`
-- Publish: `false`
+- Publish: `true`
 - Targets: `lib`
 
 ## Crate Documentation
