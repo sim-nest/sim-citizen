@@ -29,6 +29,7 @@ mod census;
 mod conformance;
 mod eq;
 mod field;
+mod read_construct;
 mod registry;
 mod runtime;
 mod symbol;
@@ -43,6 +44,7 @@ pub use eq::{CitizenEq, expr_citizen_eq, values_citizen_eq};
 pub use field::{
     CitizenField, arity_error, decode_version, field_error, value_from_expr, value_to_expr,
 };
+pub use read_construct::text_read_construct_expr;
 pub use registry::{
     CitizenInfo, CitizenLib, InstallFn, install_all, install_namespace, registered_citizens,
 };
