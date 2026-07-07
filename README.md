@@ -1,5 +1,37 @@
 # sim-citizen
 
+Make a plain Rust type into a first-class SIM value -- one that reads in from
+text, writes back out, checks its own round trip, and lists itself in a running
+system's inventory -- usually with a single `#[derive(Citizen)]`.
+
+SIM is a small Rust protocol kernel plus loadable libraries. This is a library,
+not a runnable binary; add it to a crate and call it from Rust. For the full
+run-it walkthrough of the constellation, see sim-say
+(github.com/sim-nest/sim-say).
+
+## Example
+
+```bash
+cargo add sim-citizen
+```
+
+Parse a `namespace/name` string into a kernel symbol -- the spelling used for
+the symbols recorded in citizen registry rows:
+
+```rust
+use sim_citizen::parse_symbol;
+
+let qualified = parse_symbol("example/Point");
+assert_eq!(qualified.to_string(), "example/Point");
+
+let bare = parse_symbol("Point");
+assert_eq!(bare.to_string(), "Point");
+```
+
+(from the `parse_symbol` doctest, `crates/sim-citizen/src/symbol.rs:13`)
+
+## How it works
+
 sim-citizen is the Rust-side conformance layer for the SIM constellation. A
 citizen is a public SIM-facing runtime value with a class-backed read
 constructor, constructor encoding, conformance fixture, and census row;
