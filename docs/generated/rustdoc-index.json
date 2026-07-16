@@ -1,5 +1,26 @@
 {
-  "schema": "sim.rustdoc-index.v1",
-  "repo": "sim-citizen",
-  "target_doc": "target/doc/"
+  "generator": "xtask repo-contract v1",
+  "packages": [
+    {
+      "crate_name": "sim_citizen",
+      "group": "workspace",
+      "manifest": "crates/sim-citizen/Cargo.toml",
+      "package": "sim-citizen",
+      "summary": "Citizen support outside the SIM kernel."
+    },
+    {
+      "crate_name": "sim_citizen_derive",
+      "group": "workspace",
+      "manifest": "crates/sim-citizen-derive/Cargo.toml",
+      "package": "sim-citizen-derive",
+      "summary": "Proc macros for SIM citizen values."
+    },
+    {
+      "crate_name": "xtask",
+      "group": "workspace",
+      "manifest": "xtask/Cargo.toml",
+      "package": "xtask",
+      "summary": "SIM workspace package for xtask."
+    }
+  ]
 }
