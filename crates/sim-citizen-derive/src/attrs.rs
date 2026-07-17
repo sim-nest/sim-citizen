@@ -1,24 +1,47 @@
-//! Parsing of the #[citizen(...)] attribute arguments for the Citizen derive.
+//! Parsing of the `#[citizen(...)]` attribute arguments for the Citizen derive.
 
-use syn::{Expr, Item, LitStr, Path, parse::Parser, spanned::Spanned};
+use syn::{
+    Expr, ExprPath, Item, Lit, LitStr, Path, meta::ParseNestedMeta, parse::Parser, spanned::Spanned,
+};
 
 pub(crate) struct CitizenAttrs {
     pub(crate) symbol: LitStr,
     pub(crate) version: u32,
+    pub(crate) example: Option<Path>,
+    pub(crate) fixtures: Option<Path>,
 }
 
 impl CitizenAttrs {
     pub(crate) fn parse(attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut symbol = None;
         let mut version = None;
+        let mut example = None;
+        let mut fixtures = None;
         for attr in attrs.iter().filter(|attr| attr.path().is_ident("citizen")) {
             attr.parse_nested_meta(|meta| {
                 if meta.path.is_ident("symbol") {
-                    symbol = Some(meta.value()?.parse::<LitStr>()?);
+                    let value = meta.value()?.parse::<LitStr>()?;
+                    if symbol.replace(value).is_some() {
+                        return Err(meta.error("duplicate citizen symbol"));
+                    }
                     Ok(())
                 } else if meta.path.is_ident("version") {
                     let value = meta.value()?.parse::<Expr>()?;
-                    version = Some(expr_u32(&value)?);
+                    if version.replace(expr_u32(&value)?).is_some() {
+                        return Err(meta.error("duplicate citizen version"));
+                    }
+                    Ok(())
+                } else if meta.path.is_ident("example") {
+                    let value = parse_attr_path(&meta, "example")?;
+                    if example.replace(value).is_some() {
+                        return Err(meta.error("duplicate citizen example"));
+                    }
+                    Ok(())
+                } else if meta.path.is_ident("fixtures") {
+                    let value = parse_attr_path(&meta, "fixtures")?;
+                    if fixtures.replace(value).is_some() {
+                        return Err(meta.error("duplicate citizen fixtures"));
+                    }
                     Ok(())
                 } else {
                     Err(meta.error("unsupported citizen attribute"))
@@ -32,6 +55,8 @@ impl CitizenAttrs {
             version: version.ok_or_else(|| {
                 syn::Error::new(proc_macro2::Span::call_site(), "missing citizen version")
             })?,
+            example,
+            fixtures,
         })
     }
 }
@@ -46,13 +71,19 @@ impl FieldAttrs {
         for attr in attrs.iter().filter(|attr| attr.path().is_ident("citizen")) {
             attr.parse_nested_meta(|meta| {
                 if meta.path.is_ident("list") {
-                    Ok(())
+                    Err(meta.error(
+                        "unsupported citizen field mode list; use Vec<T> field types directly",
+                    ))
                 } else if meta.path.is_ident("with") {
-                    let value = meta.value()?.parse::<LitStr>()?;
-                    with = Some(value.parse::<Path>()?);
+                    let value = parse_attr_path(&meta, "with")?;
+                    if with.replace(value).is_some() {
+                        return Err(meta.error("duplicate citizen field with"));
+                    }
                     Ok(())
                 } else if meta.path.is_ident("citizen") {
-                    Ok(())
+                    Err(meta.error(
+                        "unsupported citizen field mode citizen; use explicit field codecs instead",
+                    ))
                 } else {
                     Err(meta.error("unsupported citizen field attribute"))
                 }
@@ -137,6 +168,24 @@ fn expr_u32(expr: &Expr) -> syn::Result<u32> {
     lit.base10_parse::<u32>()
 }
 
+fn parse_attr_path(meta: &ParseNestedMeta<'_>, field: &str) -> syn::Result<Path> {
+    let expr = meta.value()?.parse::<Expr>()?;
+    match expr {
+        Expr::Path(ExprPath { path, .. }) => Ok(path),
+        Expr::Lit(expr_lit) => match expr_lit.lit {
+            Lit::Str(value) => value.parse::<Path>(),
+            _ => Err(syn::Error::new(
+                expr_lit.span(),
+                format!("expected path for citizen {field}"),
+            )),
+        },
+        other => Err(syn::Error::new(
+            other.span(),
+            format!("expected path for citizen {field}"),
+        )),
+    }
+}
+
 fn parse_non_empty_string(field: &str, value: LitStr) -> syn::Result<LitStr> {
     if value.value().trim().is_empty() {
         Err(syn::Error::new_spanned(
@@ -163,6 +212,24 @@ mod tests {
         let attrs = CitizenAttrs::parse(&input.attrs).unwrap();
         assert_eq!(attrs.symbol.value(), "example/Point");
         assert_eq!(attrs.version, 1);
+        assert!(attrs.example.is_none());
+        assert!(attrs.fixtures.is_none());
+    }
+
+    #[test]
+    fn citizen_attrs_parse_example_and_fixtures_paths() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[citizen(
+                symbol = "example/Point",
+                version = 1,
+                example = point_example,
+                fixtures = "point_fixtures"
+            )]
+            struct Point { x: i64 }
+        };
+        let attrs = CitizenAttrs::parse(&input.attrs).unwrap();
+        assert_eq!(attrs.example.unwrap().segments[0].ident, "point_example");
+        assert_eq!(attrs.fixtures.unwrap().segments[0].ident, "point_fixtures");
     }
 
     #[test]

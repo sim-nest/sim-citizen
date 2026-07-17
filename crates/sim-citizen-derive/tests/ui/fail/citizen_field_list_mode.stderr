@@ -1,0 +1,5 @@
+error: unsupported citizen field mode list; use Vec<T> field types directly
+ --> tests/ui/fail/citizen_field_list_mode.rs:8:15
+  |
+8 |     #[citizen(list)]
+  |               ^^^^

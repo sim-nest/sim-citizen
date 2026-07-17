@@ -1,0 +1,5 @@
+error: unsupported citizen field attribute
+ --> tests/ui/fail/citizen_field_unsupported_key.rs:8:15
+  |
+8 |     #[citizen(extra = "unexpected")]
+  |               ^^^^^

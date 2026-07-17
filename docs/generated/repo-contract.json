@@ -35,7 +35,7 @@
       "descriptor": "...",
       "file": "crates/sim-citizen-derive/src/lib.rs",
       "kind": "...",
-      "line": 33,
+      "line": 56,
       "reason": "..."
     },
     {
@@ -43,7 +43,7 @@
       "descriptor": "CARGO_PKG_NAME",
       "file": "crates/sim-citizen-derive/src/lib.rs",
       "kind": "CARGO_PKG_NAME",
-      "line": 38,
+      "line": 61,
       "reason": "CARGO_PKG_NAME"
     },
     {
@@ -107,7 +107,7 @@
       "descriptor": "example/live-handle",
       "file": "crates/sim-citizen/src/tests.rs",
       "kind": "live-handle",
-      "line": 21,
+      "line": 35,
       "reason": "runtime-owned state"
     }
   ],
@@ -219,10 +219,10 @@
     "generated_by": "cargo run -p xtask -- simdoc",
     "generation_timestamp": "2026-07-11T19:41:31+02:00",
     "generator": "xtask repo-contract v1",
-    "git_commit": "a33434a6bca34cae6e05ed0629465535c48607bb",
+    "git_commit": "d11ddc9dbbc06dcbfeea7f648d26940f7ffadbab",
     "repo": "sim-citizen",
     "schema": "sim.provenance.v1",
-    "source_commit": "a33434a6bca34cae6e05ed0629465535c48607bb",
+    "source_commit": "d11ddc9dbbc06dcbfeea7f648d26940f7ffadbab",
     "source_remote": "https://github.com/sim-nest/sim-citizen",
     "validation_commands": [
       "cargo fmt --all --check",
@@ -235,9 +235,9 @@
       "cargo run -p xtask -- validation-matrix --check --repo .",
       "cargo run -p xtask -- crate-catalog --check --repo ."
     ],
-    "workspace_hash": "3416213cee368be2",
+    "workspace_hash": "8ddda8299aa6ff43",
     "workspace_hash_algorithm": "fnv1a64",
-    "workspace_hash_input_count": 26,
+    "workspace_hash_input_count": 38,
     "workspace_hash_inputs": [
       "Cargo.toml",
       "crates/sim-citizen/Cargo.toml",
@@ -257,12 +257,24 @@
       "crates/sim-citizen-derive/src/attrs.rs",
       "crates/sim-citizen-derive/src/expand.rs",
       "crates/sim-citizen-derive/src/lib.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_duplicate_symbol.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_field_citizen_mode.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_field_duplicate_with.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_field_list_mode.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_field_unsupported_key.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_missing_default.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_unsupported_key.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_with_bad_decode.rs",
+      "crates/sim-citizen-derive/tests/ui/fail/citizen_with_bad_encode.rs",
       "crates/sim-citizen-derive/tests/ui/fail/non_citizen_duplicate_reason.rs",
       "crates/sim-citizen-derive/tests/ui/fail/non_citizen_empty_reason.rs",
       "crates/sim-citizen-derive/tests/ui/fail/non_citizen_missing_descriptor.rs",
       "crates/sim-citizen-derive/tests/ui/fail/non_citizen_missing_kind.rs",
       "crates/sim-citizen-derive/tests/ui/fail/non_citizen_unsupported_key.rs",
+      "crates/sim-citizen-derive/tests/ui/pass/citizen_custom_fixtures.rs",
+      "crates/sim-citizen-derive/tests/ui/pass/citizen_helper_name_collision.rs",
       "crates/sim-citizen-derive/tests/ui/pass/non_citizen_valid.rs",
+      "crates/sim-citizen-derive/tests/ui/support/citizen_shim.rs",
       "crates/sim-citizen-derive/tests/ui.rs",
       "xtask/Cargo.toml"
     ]

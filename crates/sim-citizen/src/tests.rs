@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 
 use sim_kernel::{
     Cx, DefaultFactory, Error, Expr, MatchScore, NoopEvalPolicy, NumberLiteral, ObjectEncode,
@@ -18,12 +21,37 @@ struct ExampleFloat {
     value: f64,
 }
 
+#[derive(Clone, Debug, PartialEq, sim_citizen_derive::Citizen)]
+#[citizen(
+    symbol = "example/FixtureCounter",
+    version = 1,
+    example = fixture_counter_example,
+    fixtures = fixture_counter_fixtures
+)]
+struct FixtureCounter {
+    value: i64,
+}
+
 #[sim_citizen_derive::non_citizen(
     reason = "runtime-owned state",
     kind = "live-handle",
     descriptor = "example/live-handle"
 )]
 struct ExampleLiveHandle;
+
+static FIXTURE_COUNTER_EXAMPLE_CALLS: AtomicUsize = AtomicUsize::new(0);
+static FIXTURE_COUNTER_FIXTURE_FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
+static FIXTURE_COUNTER_FIXTURE_EMISSIONS: AtomicUsize = AtomicUsize::new(0);
+
+fn fixture_counter_example() -> FixtureCounter {
+    FIXTURE_COUNTER_EXAMPLE_CALLS.fetch_add(1, Ordering::Relaxed);
+    FixtureCounter { value: 7 }
+}
+
+fn fixture_counter_fixtures() -> FixtureCounterFixtures {
+    FIXTURE_COUNTER_FIXTURE_FACTORY_CALLS.fetch_add(1, Ordering::Relaxed);
+    FixtureCounterFixtures
+}
 
 #[test]
 fn point_is_registered_by_inventory() {
@@ -39,6 +67,25 @@ fn point_is_registered_by_inventory() {
 fn point_round_trips_through_conformance() {
     let mut cx = cx();
     run_registered_conformance(&mut cx).unwrap();
+}
+
+#[test]
+fn custom_example_and_fixtures_paths_drive_conformance() {
+    let before_example = FIXTURE_COUNTER_EXAMPLE_CALLS.load(Ordering::Relaxed);
+    let before_fixtures = FIXTURE_COUNTER_FIXTURE_FACTORY_CALLS.load(Ordering::Relaxed);
+    let before_emissions = FIXTURE_COUNTER_FIXTURE_EMISSIONS.load(Ordering::Relaxed);
+
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    let info = registered_citizens()
+        .find(|info| info.symbol == "example/FixtureCounter")
+        .expect("custom fixture citizen should be registered");
+
+    (info.conformance)(&mut cx).unwrap();
+
+    assert!(FIXTURE_COUNTER_EXAMPLE_CALLS.load(Ordering::Relaxed) > before_example);
+    assert!(FIXTURE_COUNTER_FIXTURE_FACTORY_CALLS.load(Ordering::Relaxed) > before_fixtures);
+    assert!(FIXTURE_COUNTER_FIXTURE_EMISSIONS.load(Ordering::Relaxed) >= before_emissions + 2);
 }
 
 #[test]
@@ -396,6 +443,36 @@ fn register_core_any_shape(cx: &mut Cx) {
 
 #[derive(Debug)]
 struct TestAnyShape;
+
+struct FixtureCounterFixtures;
+
+impl IntoIterator for FixtureCounterFixtures {
+    type Item = FixtureCounter;
+    type IntoIter = FixtureCounterIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        FixtureCounterIter { index: 0 }
+    }
+}
+
+struct FixtureCounterIter {
+    index: usize,
+}
+
+impl Iterator for FixtureCounterIter {
+    type Item = FixtureCounter;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let value = match self.index {
+            0 => -1,
+            1 => 42,
+            _ => return None,
+        };
+        self.index += 1;
+        FIXTURE_COUNTER_FIXTURE_EMISSIONS.fetch_add(1, Ordering::Relaxed);
+        Some(FixtureCounter { value })
+    }
+}
 
 impl Shape for TestAnyShape {
     fn symbol(&self) -> Option<Symbol> {

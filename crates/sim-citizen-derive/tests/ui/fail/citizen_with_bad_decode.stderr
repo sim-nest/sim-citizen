@@ -1,0 +1,19 @@
+error[E0308]: mismatched types
+  --> tests/ui/fail/citizen_with_bad_decode.rs:5:44
+   |
+ 5 | #[derive(Clone, Debug, Default, PartialEq, Citizen)]
+   |                                            ^^^^^^^
+   |                                            |
+   |                                            expected `Expr`, found `&Expr`
+   |                                            arguments to this function are incorrect
+   |
+note: function defined here
+  --> tests/ui/fail/citizen_with_bad_decode.rs:19:12
+   |
+19 |     pub fn decode(_expr: Expr) -> Result<i64> {
+   |            ^^^^^^ -----------
+   = note: this error originates in the derive macro `Citizen` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider using clone here
+   |
+ 5 | #[derive(Clone, Debug, Default, PartialEq, Citizen.clone())]
+   |                                                   ++++++++

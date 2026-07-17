@@ -1,0 +1,5 @@
+error: duplicate citizen symbol
+ --> tests/ui/fail/citizen_duplicate_symbol.rs:6:47
+  |
+6 | #[citizen(symbol = "example/DuplicateSymbol", symbol = "example/Other", version = 1)]
+  |                                               ^^^^^^^^^^^^^^^^^^^^^^^^

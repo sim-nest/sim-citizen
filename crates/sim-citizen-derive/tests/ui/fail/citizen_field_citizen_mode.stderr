@@ -1,0 +1,5 @@
+error: unsupported citizen field mode citizen; use explicit field codecs instead
+ --> tests/ui/fail/citizen_field_citizen_mode.rs:8:15
+  |
+8 |     #[citizen(citizen)]
+  |               ^^^^^^^
