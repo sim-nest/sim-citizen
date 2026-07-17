@@ -89,7 +89,9 @@ pub fn values_citizen_eq(cx: &mut Cx, left: &Value, right: &Value) -> Result<boo
 /// Compares two `Expr`s under citizen equality.
 ///
 /// Equivalent to the kernel's canonical equality except that `f64`-domain
-/// numbers compare by canonical text, matching how citizen fields round trip.
+/// numbers only compare by canonical text when both sides are the exact
+/// `numbers/f64` domain, matching how citizen fields round trip while still
+/// failing closed on domain mismatches.
 ///
 /// # Examples
 ///
@@ -104,11 +106,17 @@ pub fn values_citizen_eq(cx: &mut Cx, left: &Value, right: &Value) -> Result<boo
 /// ```
 pub fn expr_citizen_eq(left: &Expr, right: &Expr) -> bool {
     match (left, right) {
-        (Expr::Number(left), Expr::Number(right)) if left.domain.name.as_ref() == "f64" => {
-            left.canonical == right.canonical
+        (Expr::Number(left), Expr::Number(right))
+            if is_f64_domain(&left.domain) || is_f64_domain(&right.domain) =>
+        {
+            left.domain == right.domain && left.canonical == right.canonical
         }
         _ => left.canonical_eq(right),
     }
+}
+
+fn is_f64_domain(symbol: &sim_kernel::Symbol) -> bool {
+    *symbol == sim_kernel::Symbol::qualified("numbers", "f64")
 }
 
 fn object_encoding_eq(left: &ObjectEncoding, right: &ObjectEncoding) -> bool {

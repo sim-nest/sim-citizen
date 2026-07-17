@@ -1,10 +1,18 @@
-use sim_kernel::{Cx, DefaultFactory, Error, Expr, NoopEvalPolicy, ObjectEncode, Symbol};
+use sim_kernel::{
+    Cx, DefaultFactory, Error, Expr, NoopEvalPolicy, NumberLiteral, ObjectEncode, Symbol,
+};
 
 use crate::{
-    CitizenField, CitizenLib, citizen_census_markdown, example::Point, non_citizen_card,
-    non_citizen_census_markdown, registered_citizens, registered_non_citizens,
+    CitizenField, CitizenLib, citizen_census_markdown, example::Point, expr_citizen_eq,
+    non_citizen_card, non_citizen_census_markdown, registered_citizens, registered_non_citizens,
     run_registered_conformance, value_from_expr, value_to_expr,
 };
+
+#[derive(Clone, Debug, Default, PartialEq, sim_citizen_derive::Citizen)]
+#[citizen(symbol = "example/Float", version = 1)]
+struct ExampleFloat {
+    value: f64,
+}
 
 #[sim_citizen_derive::non_citizen(
     reason = "runtime-owned state",
@@ -89,6 +97,92 @@ fn field_helpers_decode_scalar_list_and_option() {
     let value = value_from_expr(&mut cx, &expr).unwrap();
     let decoded = Option::<String>::decode_field_value(&mut cx, value, "maybe").unwrap();
     assert_eq!(decoded, None);
+}
+
+#[test]
+fn wrong_number_domains_fail_integer_read_construct() {
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    cx.grant(sim_kernel::read_construct_capability());
+    let version = value_from_expr(&mut cx, &Expr::Symbol(Symbol::new("v1"))).unwrap();
+    let wrong_x = value_from_expr(
+        &mut cx,
+        &Expr::Number(NumberLiteral {
+            domain: Symbol::qualified("numbers", "f64"),
+            canonical: "1".to_owned(),
+        }),
+    )
+    .unwrap();
+    let y = value_from_expr(&mut cx, &2_i64.encode_field()).unwrap();
+
+    let err = cx
+        .read_construct(
+            &Symbol::qualified("example", "Point"),
+            vec![version, wrong_x, y],
+        )
+        .expect_err("wrong integer domain must fail read-construct");
+    assert!(matches!(
+        err,
+        Error::Eval(message)
+            if message.contains("expected number domain citizen/int, found numbers/f64")
+    ));
+}
+
+#[test]
+fn wrong_number_domains_fail_f64_read_construct() {
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    cx.grant(sim_kernel::read_construct_capability());
+    let version = value_from_expr(&mut cx, &Expr::Symbol(Symbol::new("v1"))).unwrap();
+    let wrong_value = value_from_expr(&mut cx, &1_i64.encode_field()).unwrap();
+
+    let err = cx
+        .read_construct(
+            &Symbol::qualified("example", "Float"),
+            vec![version, wrong_value],
+        )
+        .expect_err("wrong f64 domain must fail read-construct");
+    assert!(matches!(
+        err,
+        Error::Eval(message)
+            if message.contains("expected number domain numbers/f64, found citizen/int")
+    ));
+}
+
+#[test]
+fn wrong_number_domains_are_not_citizen_equal() {
+    let f64_expr = Expr::Number(NumberLiteral {
+        domain: Symbol::qualified("numbers", "f64"),
+        canonical: "1".to_owned(),
+    });
+    let int_expr = Expr::Number(NumberLiteral {
+        domain: Symbol::qualified("citizen", "int"),
+        canonical: "1".to_owned(),
+    });
+    let other_f64_name = Expr::Number(NumberLiteral {
+        domain: Symbol::qualified("example", "f64"),
+        canonical: "1".to_owned(),
+    });
+
+    assert!(!expr_citizen_eq(&f64_expr, &int_expr));
+    assert!(!expr_citizen_eq(&int_expr, &f64_expr));
+    assert!(!expr_citizen_eq(&f64_expr, &other_f64_name));
+    assert!(!expr_citizen_eq(&other_f64_name, &f64_expr));
+}
+
+#[test]
+fn f64_special_values_round_trip_through_field_codec() {
+    for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let encoded = value.encode_field();
+        let decoded = f64::decode_field_expr(&encoded, "value").unwrap();
+        let reencoded = decoded.encode_field();
+        assert!(expr_citizen_eq(&encoded, &reencoded));
+        if value.is_nan() {
+            assert!(decoded.is_nan());
+        } else {
+            assert_eq!(decoded, value);
+        }
+    }
 }
 
 #[test]

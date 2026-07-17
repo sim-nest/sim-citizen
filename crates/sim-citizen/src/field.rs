@@ -115,6 +115,21 @@ pub fn field_error(field: &'static str, message: impl Into<String>) -> Error {
     Error::Eval(format!("citizen field {field}: {}", message.into()))
 }
 
+fn expect_number_domain(
+    number: &NumberLiteral,
+    expected: Symbol,
+    field: &'static str,
+) -> Result<()> {
+    if number.domain == expected {
+        Ok(())
+    } else {
+        Err(field_error(
+            field,
+            format!("expected number domain {expected}, found {}", number.domain),
+        ))
+    }
+}
+
 macro_rules! signed_int_field {
     ($($ty:ty),* $(,)?) => {
         $(
@@ -243,10 +258,13 @@ impl CitizenField for f64 {
 
     fn decode_field_expr(expr: &Expr, field: &'static str) -> Result<Self> {
         match expr {
-            Expr::Number(number) => number
-                .canonical
-                .parse::<f64>()
-                .map_err(|err| field_error(field, format!("invalid f64: {err}"))),
+            Expr::Number(number) => {
+                expect_number_domain(number, Symbol::qualified("numbers", "f64"), field)?;
+                number
+                    .canonical
+                    .parse::<f64>()
+                    .map_err(|err| field_error(field, format!("invalid f64: {err}")))
+            }
             other => Err(field_error(
                 field,
                 format!("expected number, found {}", expr_kind(other)),
@@ -333,10 +351,13 @@ fn int_expr(canonical: String) -> Expr {
 
 fn decode_integer_text(expr: &Expr, field: &'static str) -> Result<i128> {
     match expr {
-        Expr::Number(number) => number
-            .canonical
-            .parse::<i128>()
-            .map_err(|err| field_error(field, format!("invalid integer: {err}"))),
+        Expr::Number(number) => {
+            expect_number_domain(number, Symbol::qualified("citizen", "int"), field)?;
+            number
+                .canonical
+                .parse::<i128>()
+                .map_err(|err| field_error(field, format!("invalid integer: {err}")))
+        }
         other => Err(field_error(
             field,
             format!("expected integer number, found {}", expr_kind(other)),
