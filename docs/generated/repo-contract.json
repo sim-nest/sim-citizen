@@ -107,7 +107,7 @@
       "descriptor": "example/live-handle",
       "file": "crates/sim-citizen/src/tests.rs",
       "kind": "live-handle",
-      "line": 17,
+      "line": 21,
       "reason": "runtime-owned state"
     }
   ],
@@ -219,10 +219,10 @@
     "generated_by": "cargo run -p xtask -- simdoc",
     "generation_timestamp": "2026-07-11T19:41:31+02:00",
     "generator": "xtask repo-contract v1",
-    "git_commit": "17fbbaf43c109c63616b0e43efff14442cf44696",
+    "git_commit": "a33434a6bca34cae6e05ed0629465535c48607bb",
     "repo": "sim-citizen",
     "schema": "sim.provenance.v1",
-    "source_commit": "17fbbaf43c109c63616b0e43efff14442cf44696",
+    "source_commit": "a33434a6bca34cae6e05ed0629465535c48607bb",
     "source_remote": "https://github.com/sim-nest/sim-citizen",
     "validation_commands": [
       "cargo fmt --all --check",
@@ -235,7 +235,7 @@
       "cargo run -p xtask -- validation-matrix --check --repo .",
       "cargo run -p xtask -- crate-catalog --check --repo ."
     ],
-    "workspace_hash": "f73f90859027571c",
+    "workspace_hash": "3416213cee368be2",
     "workspace_hash_algorithm": "fnv1a64",
     "workspace_hash_input_count": 26,
     "workspace_hash_inputs": [

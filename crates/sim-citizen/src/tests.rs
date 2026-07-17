@@ -1,11 +1,15 @@
+use std::sync::Arc;
+
 use sim_kernel::{
-    Cx, DefaultFactory, Error, Expr, NoopEvalPolicy, NumberLiteral, ObjectEncode, Symbol,
+    Cx, DefaultFactory, Error, Expr, MatchScore, NoopEvalPolicy, NumberLiteral, ObjectEncode,
+    Shape, ShapeDoc, ShapeMatch, Symbol, Value,
+    card::{Card, card_fixed_predicates},
 };
 
 use crate::{
-    CitizenField, CitizenLib, citizen_census_markdown, example::Point, expr_citizen_eq,
-    non_citizen_card, non_citizen_census_markdown, registered_citizens, registered_non_citizens,
-    run_registered_conformance, value_from_expr, value_to_expr,
+    CitizenField, CitizenLib, citizen_card, citizen_census_markdown, example::Point,
+    expr_citizen_eq, non_citizen_card, non_citizen_census_markdown, registered_citizens,
+    registered_non_citizens, run_registered_conformance, value_from_expr, value_to_expr,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, sim_citizen_derive::Citizen)]
@@ -35,6 +39,36 @@ fn point_is_registered_by_inventory() {
 fn point_round_trips_through_conformance() {
     let mut cx = cx();
     run_registered_conformance(&mut cx).unwrap();
+}
+
+#[test]
+fn point_class_members_publish_version_arity_and_named_fields() {
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    let class = point_class(&cx);
+    let members = class.object().as_class().unwrap().members(&mut cx).unwrap();
+    let expr = value_to_expr(&mut cx, members, "members").unwrap();
+    let Expr::Map(entries) = expr else {
+        panic!("class members should project to a map expression");
+    };
+
+    assert!(matches!(
+        map_field(&entries, "version"),
+        Some(Expr::Number(NumberLiteral { domain, canonical }))
+            if *domain == Symbol::qualified("citizen", "int") && canonical == "1"
+    ));
+    assert!(matches!(
+        map_field(&entries, "arity"),
+        Some(Expr::Number(NumberLiteral { domain, canonical }))
+            if *domain == Symbol::qualified("citizen", "int") && canonical == "2"
+    ));
+    assert_eq!(
+        map_field(&entries, "fields"),
+        Some(&Expr::List(vec![
+            Expr::Symbol(Symbol::new("x")),
+            Expr::Symbol(Symbol::new("y")),
+        ]))
+    );
 }
 
 #[test]
@@ -83,6 +117,47 @@ fn point_wrong_capability_fails_closed() {
     assert!(
         matches!(err, Error::CapabilityDenied { capability } if capability == sim_kernel::read_construct_capability())
     );
+}
+
+#[test]
+fn point_shape_hooks_fall_back_to_nil_without_core_any_shape() {
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    let class = point_class(&cx);
+    let class_view = class.object().as_class().unwrap();
+    let read_constructor = class_view.read_constructor(&mut cx).unwrap().unwrap();
+    let read_constructor = read_constructor.object().as_read_constructor().unwrap();
+
+    for shape in [
+        class_view.constructor_shape(&mut cx).unwrap(),
+        class_view.instance_shape(&mut cx).unwrap(),
+        read_constructor.args_shape(&mut cx).unwrap(),
+    ] {
+        let expr = value_to_expr(&mut cx, shape, "shape").unwrap();
+        assert_eq!(expr, Expr::Nil);
+    }
+}
+
+#[test]
+fn point_shape_hooks_publish_core_any_when_registered() {
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    register_core_any_shape(&mut cx);
+    let class = point_class(&cx);
+    let class_view = class.object().as_class().unwrap();
+    let read_constructor = class_view.read_constructor(&mut cx).unwrap().unwrap();
+    let read_constructor = read_constructor.object().as_read_constructor().unwrap();
+
+    for shape in [
+        class_view.constructor_shape(&mut cx).unwrap(),
+        class_view.instance_shape(&mut cx).unwrap(),
+        read_constructor.args_shape(&mut cx).unwrap(),
+    ] {
+        assert_eq!(
+            shape.object().as_shape().and_then(Shape::symbol),
+            Some(Symbol::qualified("core", "Any"))
+        );
+    }
 }
 
 #[test]
@@ -204,6 +279,74 @@ fn substrate_non_citizen_census_contains_live_handle() {
 }
 
 #[test]
+fn citizen_card_uses_kernel_card_schema_and_subject() {
+    let mut cx = cx();
+    cx.load_lib(&CitizenLib::all()).unwrap();
+    let info = registered_citizens()
+        .find(|info| info.symbol == "example/Point")
+        .expect("point citizen should be registered");
+
+    let card = citizen_card(&mut cx, info).unwrap();
+    assert!(card.object().downcast_ref::<Card>().is_some());
+
+    let expr = value_to_expr(&mut cx, card, "card").unwrap();
+    let Expr::Map(entries) = expr else {
+        panic!("citizen card should project to a map expression");
+    };
+    let keys = entries
+        .iter()
+        .map(|(key, _)| match key {
+            Expr::Symbol(symbol) => symbol.clone(),
+            other => panic!("card keys must be symbols, found {other:?}"),
+        })
+        .take(card_fixed_predicates().len())
+        .collect::<Vec<_>>();
+    let projected_fixed_fields = card_fixed_predicates()
+        .into_iter()
+        .map(|symbol| Symbol::new(symbol.name.to_string()))
+        .collect::<Vec<_>>();
+    assert_eq!(keys, projected_fixed_fields);
+    assert_eq!(
+        map_field(&entries, "subject"),
+        Some(&Expr::Symbol(Symbol::qualified("example", "Point")))
+    );
+    assert_eq!(
+        map_field(&entries, "kind"),
+        Some(&Expr::Symbol(Symbol::qualified("core", "class")))
+    );
+    assert_eq!(
+        map_field(&entries, "args"),
+        Some(&Expr::Symbol(Symbol::qualified("core", "Any")))
+    );
+    assert_eq!(
+        map_field(&entries, "result"),
+        Some(&Expr::Symbol(Symbol::qualified("core", "Any")))
+    );
+    assert_eq!(map_field(&entries, "shape-known"), Some(&Expr::Bool(false)));
+    assert_eq!(
+        map_field(&entries, "crate"),
+        Some(&Expr::String("sim-citizen".to_owned()))
+    );
+    assert!(matches!(
+        map_field(&entries, "version"),
+        Some(Expr::Number(NumberLiteral { domain, canonical }))
+            if *domain == Symbol::qualified("citizen", "int") && canonical == "1"
+    ));
+    assert!(matches!(
+        map_field(&entries, "arity"),
+        Some(Expr::Number(NumberLiteral { domain, canonical }))
+            if *domain == Symbol::qualified("citizen", "int") && canonical == "2"
+    ));
+    assert_eq!(
+        map_field(&entries, "fields"),
+        Some(&Expr::List(vec![
+            Expr::Symbol(Symbol::new("x")),
+            Expr::Symbol(Symbol::new("y")),
+        ]))
+    );
+}
+
+#[test]
 fn non_citizen_card_renders_registered_exemption_fields() {
     let info = registered_non_citizens()
         .find(|info| info.type_name == "ExampleLiveHandle")
@@ -237,11 +380,55 @@ fn cx() -> Cx {
     )
 }
 
-fn map_string_field<'a>(entries: &'a [(Expr, Expr)], field: &str) -> Option<&'a str> {
-    entries.iter().find_map(|(key, value)| match (key, value) {
-        (Expr::Symbol(symbol), Expr::String(value)) if symbol.name.as_ref() == field => {
-            Some(value.as_str())
-        }
+fn point_class(cx: &Cx) -> Value {
+    cx.registry()
+        .class_by_symbol(&Symbol::qualified("example", "Point"))
+        .cloned()
+        .expect("point citizen class should be loaded")
+}
+
+fn register_core_any_shape(cx: &mut Cx) {
+    let shape = cx.factory().opaque(Arc::new(TestAnyShape)).unwrap();
+    cx.registry_mut()
+        .register_shape_value(Symbol::qualified("core", "Any"), shape)
+        .unwrap();
+}
+
+#[derive(Debug)]
+struct TestAnyShape;
+
+impl Shape for TestAnyShape {
+    fn symbol(&self) -> Option<Symbol> {
+        Some(Symbol::qualified("core", "Any"))
+    }
+
+    fn is_total(&self) -> bool {
+        true
+    }
+
+    fn check_value(&self, _cx: &mut Cx, _value: Value) -> sim_kernel::Result<ShapeMatch> {
+        Ok(ShapeMatch::accept(MatchScore::exact(1)))
+    }
+
+    fn check_expr(&self, _cx: &mut Cx, _expr: &Expr) -> sim_kernel::Result<ShapeMatch> {
+        Ok(ShapeMatch::accept(MatchScore::exact(1)))
+    }
+
+    fn describe(&self, _cx: &mut Cx) -> sim_kernel::Result<ShapeDoc> {
+        Ok(ShapeDoc::new("any"))
+    }
+}
+
+fn map_field<'a>(entries: &'a [(Expr, Expr)], field: &str) -> Option<&'a Expr> {
+    entries.iter().find_map(|(key, value)| match key {
+        Expr::Symbol(symbol) if symbol.name.as_ref() == field => Some(value),
         _ => None,
     })
+}
+
+fn map_string_field<'a>(entries: &'a [(Expr, Expr)], field: &str) -> Option<&'a str> {
+    match map_field(entries, field) {
+        Some(Expr::String(value)) => Some(value.as_str()),
+        _ => None,
+    }
 }

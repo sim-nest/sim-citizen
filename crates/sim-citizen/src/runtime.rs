@@ -209,11 +209,11 @@ where
     }
 
     fn constructor_shape(&self, cx: &mut Cx) -> Result<ShapeRef> {
-        cx.factory().nil()
+        any_shape(cx)
     }
 
     fn instance_shape(&self, cx: &mut Cx) -> Result<ShapeRef> {
-        cx.factory().nil()
+        any_shape(cx)
     }
 
     fn read_constructor(&self, cx: &mut Cx) -> Result<Option<ReadConstructorRef>> {
@@ -221,20 +221,12 @@ where
     }
 
     fn members(&self, cx: &mut Cx) -> Result<TableRef> {
-        let fields = T::citizen_fields()
-            .iter()
-            .map(|field| cx.factory().symbol(Symbol::new((*field).to_owned())))
-            .collect::<Result<Vec<_>>>()?;
-        cx.factory().table(vec![
-            (
-                Symbol::new("version"),
-                cx.factory().number_literal(
-                    parse_symbol("citizen/int"),
-                    T::citizen_version().to_string(),
-                )?,
-            ),
-            (Symbol::new("fields"), cx.factory().list(fields)?),
-        ])
+        citizen_metadata_table(
+            cx,
+            T::citizen_version(),
+            T::citizen_arity(),
+            T::citizen_fields(),
+        )
     }
 }
 
@@ -247,7 +239,7 @@ where
     }
 
     fn args_shape(&self, cx: &mut Cx) -> Result<ShapeRef> {
-        cx.factory().nil()
+        any_shape(cx)
     }
 
     fn construct_read(&self, cx: &mut Cx, args: Vec<Value>) -> Result<Value> {
@@ -260,4 +252,40 @@ where
         }
         self.call(cx, Args::new(args))
     }
+}
+
+fn any_shape(cx: &mut Cx) -> Result<ShapeRef> {
+    if let Some(shape) = cx
+        .registry()
+        .shape_by_symbol(&Symbol::qualified("core", "Any"))
+    {
+        Ok(shape.clone())
+    } else {
+        cx.factory().nil()
+    }
+}
+
+fn citizen_metadata_table(
+    cx: &mut Cx,
+    version: u32,
+    arity: usize,
+    fields: &[&str],
+) -> Result<TableRef> {
+    let fields = fields
+        .iter()
+        .map(|field| cx.factory().symbol(Symbol::new((*field).to_owned())))
+        .collect::<Result<Vec<_>>>()?;
+    cx.factory().table(vec![
+        (
+            Symbol::new("version"),
+            cx.factory()
+                .number_literal(parse_symbol("citizen/int"), version.to_string())?,
+        ),
+        (
+            Symbol::new("arity"),
+            cx.factory()
+                .number_literal(parse_symbol("citizen/int"), arity.to_string())?,
+        ),
+        (Symbol::new("fields"), cx.factory().list(fields)?),
+    ])
 }
