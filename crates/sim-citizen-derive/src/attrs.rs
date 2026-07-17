@@ -1,6 +1,6 @@
 //! Parsing of the #[citizen(...)] attribute arguments for the Citizen derive.
 
-use syn::{Expr, LitStr, Path, spanned::Spanned};
+use syn::{Expr, Item, LitStr, Path, parse::Parser, spanned::Spanned};
 
 pub(crate) struct CitizenAttrs {
     pub(crate) symbol: LitStr,
@@ -62,6 +62,71 @@ impl FieldAttrs {
     }
 }
 
+pub(crate) struct NonCitizenAttrs {
+    pub(crate) reason: LitStr,
+    pub(crate) kind: LitStr,
+    pub(crate) descriptor: LitStr,
+}
+
+impl NonCitizenAttrs {
+    pub(crate) fn parse(tokens: proc_macro2::TokenStream) -> syn::Result<Self> {
+        let mut reason = None;
+        let mut kind = None;
+        let mut descriptor = None;
+        let parser = syn::meta::parser(|meta| {
+            if meta.path.is_ident("reason") {
+                let value = parse_non_empty_string("reason", meta.value()?.parse::<LitStr>()?)?;
+                if reason.replace(value).is_some() {
+                    return Err(meta.error("duplicate non_citizen reason"));
+                }
+                Ok(())
+            } else if meta.path.is_ident("kind") {
+                let value = parse_non_empty_string("kind", meta.value()?.parse::<LitStr>()?)?;
+                if kind.replace(value).is_some() {
+                    return Err(meta.error("duplicate non_citizen kind"));
+                }
+                Ok(())
+            } else if meta.path.is_ident("descriptor") {
+                let value = parse_non_empty_string("descriptor", meta.value()?.parse::<LitStr>()?)?;
+                if descriptor.replace(value).is_some() {
+                    return Err(meta.error("duplicate non_citizen descriptor"));
+                }
+                Ok(())
+            } else {
+                Err(meta.error("unsupported non_citizen attribute"))
+            }
+        });
+        parser.parse2(tokens)?;
+        Ok(Self {
+            reason: reason.ok_or_else(|| {
+                syn::Error::new(proc_macro2::Span::call_site(), "missing non_citizen reason")
+            })?,
+            kind: kind.ok_or_else(|| {
+                syn::Error::new(proc_macro2::Span::call_site(), "missing non_citizen kind")
+            })?,
+            descriptor: descriptor.ok_or_else(|| {
+                syn::Error::new(
+                    proc_macro2::Span::call_site(),
+                    "missing non_citizen descriptor",
+                )
+            })?,
+        })
+    }
+}
+
+pub(crate) fn item_type_name(item: &Item) -> syn::Result<LitStr> {
+    match item {
+        Item::Struct(item) => Ok(LitStr::new(&item.ident.to_string(), item.ident.span())),
+        Item::Enum(item) => Ok(LitStr::new(&item.ident.to_string(), item.ident.span())),
+        Item::Union(item) => Ok(LitStr::new(&item.ident.to_string(), item.ident.span())),
+        Item::Type(item) => Ok(LitStr::new(&item.ident.to_string(), item.ident.span())),
+        other => Err(syn::Error::new_spanned(
+            other,
+            "#[non_citizen] supports only structs, enums, unions, and type aliases",
+        )),
+    }
+}
+
 fn expr_u32(expr: &Expr) -> syn::Result<u32> {
     let Expr::Lit(expr_lit) = expr else {
         return Err(syn::Error::new(expr.span(), "expected integer literal"));
@@ -72,9 +137,20 @@ fn expr_u32(expr: &Expr) -> syn::Result<u32> {
     lit.base10_parse::<u32>()
 }
 
+fn parse_non_empty_string(field: &str, value: LitStr) -> syn::Result<LitStr> {
+    if value.value().trim().is_empty() {
+        Err(syn::Error::new_spanned(
+            &value,
+            format!("non_citizen {field} cannot be empty"),
+        ))
+    } else {
+        Ok(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use syn::DeriveInput;
+    use syn::{DeriveInput, Item};
 
     use super::*;
 
@@ -87,5 +163,27 @@ mod tests {
         let attrs = CitizenAttrs::parse(&input.attrs).unwrap();
         assert_eq!(attrs.symbol.value(), "example/Point");
         assert_eq!(attrs.version, 1);
+    }
+
+    #[test]
+    fn non_citizen_attrs_parse_descriptor_contract() {
+        let attrs = NonCitizenAttrs::parse(quote::quote!(
+            reason = "runtime-owned state",
+            kind = "live-handle",
+            descriptor = "example/live-handle"
+        ))
+        .unwrap();
+        assert_eq!(attrs.reason.value(), "runtime-owned state");
+        assert_eq!(attrs.kind.value(), "live-handle");
+        assert_eq!(attrs.descriptor.value(), "example/live-handle");
+    }
+
+    #[test]
+    fn item_type_name_accepts_type_items() {
+        let input: Item = syn::parse_quote! {
+            struct ExampleLiveHandle;
+        };
+        let name = item_type_name(&input).unwrap();
+        assert_eq!(name.value(), "ExampleLiveHandle");
     }
 }

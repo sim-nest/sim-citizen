@@ -34,9 +34,34 @@ pub struct CitizenInfo {
 
 inventory::collect!(CitizenInfo);
 
+/// One inventory-registered explicit non-citizen exemption.
+///
+/// Collected via `inventory` so live handles and other deliberate exemptions
+/// are recorded alongside citizens rather than only living in source comments.
+#[derive(Clone, Copy)]
+pub struct NonCitizenInfo {
+    /// The Rust type name carrying the exemption.
+    pub type_name: &'static str,
+    /// The crate that defined the exemption.
+    pub crate_name: &'static str,
+    /// Why the type is exempt from citizen conformance.
+    pub reason: &'static str,
+    /// The exemption kind, for example `live-handle`.
+    pub kind: &'static str,
+    /// The named descriptor strategy the type follows instead.
+    pub descriptor: &'static str,
+}
+
+inventory::collect!(NonCitizenInfo);
+
 /// Iterates every [`CitizenInfo`] registered through `inventory`.
 pub fn registered_citizens() -> impl Iterator<Item = &'static CitizenInfo> {
     inventory::iter::<CitizenInfo>.into_iter()
+}
+
+/// Iterates every [`NonCitizenInfo`] registered through `inventory`.
+pub fn registered_non_citizens() -> impl Iterator<Item = &'static NonCitizenInfo> {
+    inventory::iter::<NonCitizenInfo>.into_iter()
 }
 
 /// Installs every registered citizen's class into `linker`.

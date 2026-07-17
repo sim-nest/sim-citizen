@@ -3,10 +3,10 @@
   "generated_by": "cargo run -p xtask -- simdoc",
   "generation_timestamp": "2026-07-11T19:41:31+02:00",
   "generator": "xtask repo-contract v1",
-  "git_commit": "58cc28f7c98a6b7c65f4ff8686c1f72a6752b67d",
+  "git_commit": "05e980df552dab6b05295d1583d80b2643803f18",
   "repo": "sim-citizen",
   "schema": "sim.provenance.v1",
-  "source_commit": "58cc28f7c98a6b7c65f4ff8686c1f72a6752b67d",
+  "source_commit": "05e980df552dab6b05295d1583d80b2643803f18",
   "source_remote": "https://github.com/sim-nest/sim-citizen",
   "validation_commands": [
     "cargo fmt --all --check",
@@ -19,9 +19,9 @@
     "cargo run -p xtask -- validation-matrix --check --repo .",
     "cargo run -p xtask -- crate-catalog --check --repo ."
   ],
-  "workspace_hash": "572803a4d1774aa4",
+  "workspace_hash": "df0360b28360692c",
   "workspace_hash_algorithm": "fnv1a64",
-  "workspace_hash_input_count": 19,
+  "workspace_hash_input_count": 26,
   "workspace_hash_inputs": [
     "Cargo.toml",
     "crates/sim-citizen/Cargo.toml",
@@ -41,6 +41,13 @@
     "crates/sim-citizen-derive/src/attrs.rs",
     "crates/sim-citizen-derive/src/expand.rs",
     "crates/sim-citizen-derive/src/lib.rs",
+    "crates/sim-citizen-derive/tests/ui/fail/non_citizen_duplicate_reason.rs",
+    "crates/sim-citizen-derive/tests/ui/fail/non_citizen_empty_reason.rs",
+    "crates/sim-citizen-derive/tests/ui/fail/non_citizen_missing_descriptor.rs",
+    "crates/sim-citizen-derive/tests/ui/fail/non_citizen_missing_kind.rs",
+    "crates/sim-citizen-derive/tests/ui/fail/non_citizen_unsupported_key.rs",
+    "crates/sim-citizen-derive/tests/ui/pass/non_citizen_valid.rs",
+    "crates/sim-citizen-derive/tests/ui.rs",
     "xtask/Cargo.toml"
   ]
 }

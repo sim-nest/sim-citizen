@@ -42,9 +42,10 @@ behind the strict citizen gate.
 
 Domain types usually opt in with `#[derive(Citizen)]`, which generates that
 support from `#[citizen(...)]` attributes; hard cases register hand-written
-citizens, and live handles carry inline `#[non_citizen]` exemptions that name
-their descriptor strategy. Read-construct stays capability-gated by the
-codec/runtime path, not by this layer.
+citizens, and live handles carry inline
+`#[non_citizen(reason = "...", kind = "...", descriptor = "...")]`
+exemptions that name their descriptor strategy. Read-construct stays
+capability-gated by the codec/runtime path, not by this layer.
 
 ## Crates
 

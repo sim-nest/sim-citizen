@@ -1,0 +1,5 @@
+error: non_citizen reason cannot be empty
+ --> tests/ui/fail/non_citizen_empty_reason.rs:4:14
+  |
+4 |     reason = "",
+  |              ^^

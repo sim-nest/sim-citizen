@@ -1,0 +1,5 @@
+error: unsupported non_citizen attribute
+ --> tests/ui/fail/non_citizen_unsupported_key.rs:7:5
+  |
+7 |     extra = "unexpected"
+  |     ^^^^^

@@ -1,9 +1,17 @@
 use sim_kernel::{Cx, DefaultFactory, Error, Expr, NoopEvalPolicy, ObjectEncode, Symbol};
 
 use crate::{
-    CitizenField, CitizenLib, citizen_census_markdown, example::Point, registered_citizens,
-    run_registered_conformance, value_from_expr,
+    CitizenField, CitizenLib, citizen_census_markdown, example::Point, non_citizen_card,
+    non_citizen_census_markdown, registered_citizens, registered_non_citizens,
+    run_registered_conformance, value_from_expr, value_to_expr,
 };
+
+#[sim_citizen_derive::non_citizen(
+    reason = "runtime-owned state",
+    kind = "live-handle",
+    descriptor = "example/live-handle"
+)]
+struct ExampleLiveHandle;
 
 #[test]
 fn point_is_registered_by_inventory() {
@@ -19,6 +27,18 @@ fn point_is_registered_by_inventory() {
 fn point_round_trips_through_conformance() {
     let mut cx = cx();
     run_registered_conformance(&mut cx).unwrap();
+}
+
+#[test]
+fn non_citizen_exemption_is_registered_by_inventory() {
+    let _ = ExampleLiveHandle;
+    let info = registered_non_citizens()
+        .find(|info| info.type_name == "ExampleLiveHandle")
+        .expect("non-citizen exemption should be registered");
+    assert_eq!(info.crate_name, "sim-citizen");
+    assert_eq!(info.reason, "runtime-owned state");
+    assert_eq!(info.kind, "live-handle");
+    assert_eq!(info.descriptor, "example/live-handle");
 }
 
 #[test]
@@ -75,6 +95,45 @@ fn field_helpers_decode_scalar_list_and_option() {
 fn substrate_citizen_census_contains_point() {
     let generated = citizen_census_markdown();
     assert!(generated.contains("| `example/Point` | 1 | 2 | `sim-citizen` |"));
+    assert!(generated.contains("# Generated Non-Citizen Exemption Census"));
+    assert!(generated.contains(
+        "| `ExampleLiveHandle` | `live-handle` | `example/live-handle` | `sim-citizen` | runtime-owned state |"
+    ));
+}
+
+#[test]
+fn substrate_non_citizen_census_contains_live_handle() {
+    let generated = non_citizen_census_markdown();
+    assert!(generated.contains(
+        "| `ExampleLiveHandle` | `live-handle` | `example/live-handle` | `sim-citizen` | runtime-owned state |"
+    ));
+}
+
+#[test]
+fn non_citizen_card_renders_registered_exemption_fields() {
+    let info = registered_non_citizens()
+        .find(|info| info.type_name == "ExampleLiveHandle")
+        .expect("non-citizen exemption should be registered");
+    let mut cx = cx();
+    let card = non_citizen_card(&mut cx, info).unwrap();
+    let expr = value_to_expr(&mut cx, card, "card").unwrap();
+    let Expr::Map(entries) = expr else {
+        panic!("non-citizen card should project to a map expression");
+    };
+    assert_eq!(
+        map_string_field(&entries, "type_name"),
+        Some("ExampleLiveHandle")
+    );
+    assert_eq!(map_string_field(&entries, "crate"), Some("sim-citizen"));
+    assert_eq!(
+        map_string_field(&entries, "reason"),
+        Some("runtime-owned state")
+    );
+    assert_eq!(map_string_field(&entries, "kind"), Some("live-handle"));
+    assert_eq!(
+        map_string_field(&entries, "descriptor"),
+        Some("example/live-handle")
+    );
 }
 
 fn cx() -> Cx {
@@ -82,4 +141,13 @@ fn cx() -> Cx {
         std::sync::Arc::new(NoopEvalPolicy),
         std::sync::Arc::new(DefaultFactory),
     )
+}
+
+fn map_string_field<'a>(entries: &'a [(Expr, Expr)], field: &str) -> Option<&'a str> {
+    entries.iter().find_map(|(key, value)| match (key, value) {
+        (Expr::Symbol(symbol), Expr::String(value)) if symbol.name.as_ref() == field => {
+            Some(value.as_str())
+        }
+        _ => None,
+    })
 }
