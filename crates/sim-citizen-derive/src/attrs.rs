@@ -1,7 +1,8 @@
 //! Parsing of the `#[citizen(...)]` attribute arguments for the Citizen derive.
 
 use syn::{
-    Expr, ExprPath, Item, Lit, LitStr, Path, meta::ParseNestedMeta, parse::Parser, spanned::Spanned,
+    Expr, Item, LitStr, Path, meta::ParseNestedMeta, parse::Parser,
+    parse::discouraged::Speculative, spanned::Spanned,
 };
 
 pub(crate) struct CitizenAttrs {
@@ -169,21 +170,16 @@ fn expr_u32(expr: &Expr) -> syn::Result<u32> {
 }
 
 fn parse_attr_path(meta: &ParseNestedMeta<'_>, field: &str) -> syn::Result<Path> {
-    let expr = meta.value()?.parse::<Expr>()?;
-    match expr {
-        Expr::Path(ExprPath { path, .. }) => Ok(path),
-        Expr::Lit(expr_lit) => match expr_lit.lit {
-            Lit::Str(value) => value.parse::<Path>(),
-            _ => Err(syn::Error::new(
-                expr_lit.span(),
-                format!("expected path for citizen {field}"),
-            )),
-        },
-        other => Err(syn::Error::new(
-            other.span(),
-            format!("expected path for citizen {field}"),
-        )),
+    let value = meta.value()?;
+    let fork = value.fork();
+    if let Ok(path) = fork.parse::<Path>() {
+        value.advance_to(&fork);
+        return Ok(path);
     }
+    let literal = value
+        .parse::<LitStr>()
+        .map_err(|_| value.error(format!("expected path for citizen {field}")))?;
+    literal.parse::<Path>()
 }
 
 fn parse_non_empty_string(field: &str, value: LitStr) -> syn::Result<LitStr> {
@@ -199,7 +195,7 @@ fn parse_non_empty_string(field: &str, value: LitStr) -> syn::Result<LitStr> {
 
 #[cfg(test)]
 mod tests {
-    use syn::{DeriveInput, Item};
+    use syn::{DeriveInput, Field, Item};
 
     use super::*;
 
@@ -230,6 +226,16 @@ mod tests {
         let attrs = CitizenAttrs::parse(&input.attrs).unwrap();
         assert_eq!(attrs.example.unwrap().segments[0].ident, "point_example");
         assert_eq!(attrs.fixtures.unwrap().segments[0].ident, "point_fixtures");
+    }
+
+    #[test]
+    fn field_attrs_parse_string_codec_path() {
+        let field: Field = syn::parse_quote! {
+            #[citizen(with = "point_codec")]
+            value: i64
+        };
+        let attrs = FieldAttrs::parse(&field.attrs).unwrap();
+        assert_eq!(attrs.with.unwrap().segments[0].ident, "point_codec");
     }
 
     #[test]
