@@ -20,9 +20,9 @@ SIM crates on crates.io:
 Every PR runs these gates in CI, and they must be green before merge:
 
 - `cargo fmt --all --check`
-- `cargo clippy --workspace --all-targets -- -D warnings`
 - `cargo test --workspace`
-- `cargo doc --workspace --no-deps`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps`
 - `cargo run -p xtask -- simdoc --check`
 - `cargo run -p xtask -- check-file-sizes`
 
