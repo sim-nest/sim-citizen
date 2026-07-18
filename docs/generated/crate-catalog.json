@@ -1,10 +1,10 @@
 {
   "generator": "xtask crate-catalog v1",
-  "package_count": 3,
+  "package_count": 4,
   "packages": [
     {
       "description": "Proc macros for SIM citizen values.",
-      "generated_readme": true,
+      "generated_readme": false,
       "manifest": "crates/sim-citizen-derive/Cargo.toml",
       "name": "sim-citizen-derive",
       "publish": "true",
@@ -17,7 +17,7 @@
     },
     {
       "description": "Citizen support outside the SIM kernel.",
-      "generated_readme": true,
+      "generated_readme": false,
       "manifest": "crates/sim-citizen/Cargo.toml",
       "name": "sim-citizen",
       "publish": "true",
@@ -25,6 +25,18 @@
       "root": "crates/sim-citizen",
       "target_kinds": [
         "lib"
+      ]
+    },
+    {
+      "description": "SIM workspace package for citizen roundtrip.",
+      "generated_readme": false,
+      "manifest": "recipes/citizen-roundtrip/Cargo.toml",
+      "name": "citizen-roundtrip",
+      "publish": "false",
+      "readme": "recipes/citizen-roundtrip/README.md",
+      "root": "recipes/citizen-roundtrip",
+      "target_kinds": [
+        "bin"
       ]
     },
     {

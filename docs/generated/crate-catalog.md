@@ -8,4 +8,5 @@ Generated from Cargo metadata by `xtask crate-catalog v1`.
 | --- | --- | --- | --- |
 | `sim-citizen-derive` | `true` | `proc-macro, test` | Proc macros for SIM citizen values. |
 | `sim-citizen` | `true` | `lib` | Citizen support outside the SIM kernel. |
+| `citizen-roundtrip` | `false` | `bin` | SIM workspace package for citizen roundtrip. |
 | `xtask` | `false` | `bin` | SIM workspace package for xtask. |
