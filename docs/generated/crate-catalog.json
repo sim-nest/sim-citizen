@@ -11,7 +11,8 @@
       "readme": "crates/sim-citizen-derive/README.md",
       "root": "crates/sim-citizen-derive",
       "target_kinds": [
-        "proc-macro"
+        "proc-macro",
+        "test"
       ]
     },
     {
