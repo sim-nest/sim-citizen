@@ -2,6 +2,13 @@
   "generator": "xtask repo-contract v1",
   "packages": [
     {
+      "crate_name": "citizen-roundtrip",
+      "group": "workspace",
+      "manifest": "recipes/citizen-roundtrip/Cargo.toml",
+      "package": "citizen-roundtrip",
+      "summary": "SIM workspace package for citizen roundtrip."
+    },
+    {
       "crate_name": "sim_citizen",
       "group": "workspace",
       "manifest": "crates/sim-citizen/Cargo.toml",

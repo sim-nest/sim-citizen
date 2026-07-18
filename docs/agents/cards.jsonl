@@ -1,0 +1,4 @@
+{"kind":"recipe","path":"recipes/citizen-roundtrip/Cargo.toml"}
+{"kind":"recipe","path":"recipes/citizen-roundtrip/README.md"}
+{"kind":"recipe","path":"recipes/citizen-roundtrip/recipe.toml"}
+{"kind":"recipe","path":"recipes/citizen-roundtrip/src/main.rs"}

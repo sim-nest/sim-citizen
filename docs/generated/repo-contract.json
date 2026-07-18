@@ -23,6 +23,7 @@
   ],
   "groups": {
     "workspace": [
+      "citizen-roundtrip",
       "sim-citizen",
       "sim-citizen-derive",
       "xtask"
@@ -111,8 +112,50 @@
       "reason": "runtime-owned state"
     }
   ],
-  "package_count": 3,
+  "package_count": 4,
   "packages": [
+    {
+      "crate_name": "citizen-roundtrip",
+      "dependencies": [
+        {
+          "kind": "normal",
+          "optional": false,
+          "package": "sim-citizen",
+          "rename": null,
+          "target": null
+        },
+        {
+          "kind": "normal",
+          "optional": false,
+          "package": "sim-citizen-derive",
+          "rename": null,
+          "target": null
+        }
+      ],
+      "description": "SIM workspace package for citizen roundtrip.",
+      "features": [],
+      "group": "workspace",
+      "manifest": "recipes/citizen-roundtrip/Cargo.toml",
+      "name": "citizen-roundtrip",
+      "publish": "false",
+      "root": "recipes/citizen-roundtrip",
+      "rustdoc_summary": "SIM workspace package for citizen roundtrip.",
+      "target_kinds": [
+        "bin"
+      ],
+      "targets": [
+        {
+          "crate_types": [
+            "bin"
+          ],
+          "kind": [
+            "bin"
+          ],
+          "name": "citizen-roundtrip",
+          "src": "recipes/citizen-roundtrip/src/main.rs"
+        }
+      ]
+    },
     {
       "crate_name": "sim_citizen",
       "dependencies": [
@@ -219,10 +262,10 @@
     "generated_by": "cargo run -p xtask -- simdoc",
     "generation_timestamp": "2026-07-11T19:41:31+02:00",
     "generator": "xtask repo-contract v1",
-    "git_commit": "2d121400a908369332e4132d31c973a3080f6803",
+    "git_commit": "894fa16b79c13476267a30b4d1586f1393c55624",
     "repo": "sim-citizen",
     "schema": "sim.provenance.v1",
-    "source_commit": "2d121400a908369332e4132d31c973a3080f6803",
+    "source_commit": "894fa16b79c13476267a30b4d1586f1393c55624",
     "source_remote": "https://github.com/sim-nest/sim-citizen",
     "validation_commands": [
       "cargo fmt --all --check",
@@ -235,9 +278,9 @@
       "cargo run -p xtask -- validation-matrix --check --repo .",
       "cargo run -p xtask -- crate-catalog --check --repo ."
     ],
-    "workspace_hash": "1d6013e85462ff66",
+    "workspace_hash": "534ffbba41d2645e",
     "workspace_hash_algorithm": "fnv1a64",
-    "workspace_hash_input_count": 38,
+    "workspace_hash_input_count": 40,
     "workspace_hash_inputs": [
       "Cargo.toml",
       "crates/sim-citizen/Cargo.toml",
@@ -276,6 +319,8 @@
       "crates/sim-citizen-derive/tests/ui/pass/non_citizen_valid.rs",
       "crates/sim-citizen-derive/tests/ui/support/citizen_shim.rs",
       "crates/sim-citizen-derive/tests/ui.rs",
+      "recipes/citizen-roundtrip/Cargo.toml",
+      "recipes/citizen-roundtrip/recipe.toml",
       "xtask/Cargo.toml"
     ]
   },

@@ -1,0 +1,14 @@
+[package]
+name = "citizen-roundtrip"
+version = "0.1.0"
+edition = "2024"
+license = "MPL-2.0"
+publish = false
+
+[dependencies]
+sim-citizen = { path = "../../crates/sim-citizen" }
+sim-citizen-derive = { path = "../../crates/sim-citizen-derive" }
+sim-kernel = "0.1.0"
+
+[lints]
+workspace = true

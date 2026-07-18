@@ -95,8 +95,14 @@ crate to build.
 
 ### Examples and recipes
 
-The crates' examples are their rustdoc doctests, the `example` reference citizen,
-and the in-crate conformance fixtures. Neither crate ships a `recipes/` tree: a
-runnable recipe that exercises a citizen end to end needs a codec and a runtime
-to read-construct and evaluate it, which this support layer does not load.
-Recipes that register and drive citizens live in the crates that load those.
+The crates' examples are their rustdoc doctests, the in-crate conformance
+fixtures, and the `recipes/citizen-roundtrip` Cargo recipe. The recipe derives a
+small `Widget` citizen, registers it through the citizen inventory and
+`CitizenLib` installation path, runs registered conformance, and prints the
+generated census row.
+
+Run it from this repository:
+
+```bash
+cargo run --manifest-path recipes/citizen-roundtrip/Cargo.toml
+```
