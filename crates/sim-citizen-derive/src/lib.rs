@@ -4,7 +4,9 @@
 //! `#[citizen(...)]` attributes (symbol, version, example/fixture hooks, and
 //! field options), and the
 //! `#[non_citizen]` attribute marks a type as an explicit, descriptor-named
-//! exemption. The generated code targets the `sim-citizen` support layer.
+//! exemption. The generated code targets the `sim-citizen` support layer and
+//! supplies both inventory metadata and an explicit `CitizenRuntime::citizen_info`
+//! hook for `CitizenRegistry` users.
 //!
 //! `Citizen` accepts this attribute grammar:
 //!
@@ -36,7 +38,9 @@ use syn::{DeriveInput, parse_macro_input};
 ///
 /// Reads the type's `#[citizen(...)]` attributes and generates the read
 /// constructor, constructor encoding, conformance fixture, and census
-/// registration that the `sim-citizen` support layer expects.
+/// registration that the `sim-citizen` support layer expects. The generated
+/// runtime metadata also lets callers register the type explicitly through
+/// `CitizenRegistry::register`.
 ///
 /// The derive requires `symbol = "..."`
 /// and `version = N`, optionally accepts `example = path::to::fixture_fn`

@@ -131,6 +131,14 @@ pub trait Citizen: Clone + Send + Sync + 'static {
 }
 
 pub trait CitizenRuntime: Citizen + Object + ObjectCompat + ObjectEncode + PartialEq + core::fmt::Debug {
+    fn citizen_info() -> CitizenInfo;
+    fn install(linker: &mut Linker<'_>) -> Result<()>
+    where
+        Self: Sized,
+    {
+        install_derived::<Self>(linker)
+    }
+    fn conformance(cx: &mut Cx) -> Result<()>;
     fn construct_from_values(cx: &mut Cx, args: Vec<Value>) -> Result<Self>;
     fn example() -> Self;
 }

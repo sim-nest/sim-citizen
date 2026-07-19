@@ -20,14 +20,17 @@ cargo add sim-citizen-derive
 
 - `Citizen` and `CitizenRuntime` describe the class symbol, version, fields,
   constructor encoding, fixture, and runtime object hooks for a domain type.
-- `CitizenLib` installs registered citizens into a `sim_kernel::Cx` so the
-  class-backed read constructor and browse surfaces are available.
-- `run_registered_conformance` executes every registered fixture through the
-  read-construct round-trip gate.
+- `CitizenLib` installs inventory-registered citizens into a `sim_kernel::Cx`,
+  while `CitizenRegistry` lets a crate register named citizen types explicitly
+  for release, LTO, and wasm checks.
+- `run_registered_conformance` executes inventory fixtures through the
+  read-construct round-trip gate; the expected-symbol and explicit-registry
+  variants fail closed when a required citizen row is absent.
 - `CitizenField` encodes and decodes supported scalar, list, option, and custom
   field values.
-- `citizen_card` and `citizen_census_markdown` expose the inventory that a host
-  or reviewer can inspect.
+- `citizen_card`, `citizen_census_markdown`, and
+  `citizen_registry_census_markdown` expose the registry rows that a host or
+  reviewer can inspect.
 
 ## Contract Shape
 
@@ -41,18 +44,19 @@ construction permission.
 ## Quick Use
 
 ```rust
-use sim_citizen::{CitizenLib, run_registered_conformance};
+use sim_citizen::{CitizenRegistry, run_registry_conformance_expecting};
 use sim_kernel::{Cx, DefaultFactory, NoopEvalPolicy};
 use std::sync::Arc;
 
 fn install_and_check() -> sim_kernel::Result<()> {
     let mut cx = Cx::new(Arc::new(NoopEvalPolicy), Arc::new(DefaultFactory));
-    cx.load_lib(&CitizenLib::all())?;
-    run_registered_conformance(&mut cx)
+    let mut registry = CitizenRegistry::new();
+    registry.register::<my_crate::Widget>()?;
+    run_registry_conformance_expecting(&mut cx, &registry, &["my-crate/Widget"])
 }
 ```
 
 The repository root README explains the crate group. The
 `recipes/citizen-roundtrip` recipe shows a complete derived citizen that
-registers, runs conformance, and prints its census row. API documentation is on
-docs.rs under `sim-citizen`.
+registers explicitly, runs conformance, and prints its census row. API
+documentation is on docs.rs under `sim-citizen`.

@@ -8,7 +8,7 @@ use sim_kernel::{
 };
 
 use crate::{
-    CitizenLib, CitizenRuntime, field_error, registered_citizens, value_from_expr,
+    CitizenInfo, CitizenLib, CitizenRegistry, CitizenRuntime, field_error, value_from_expr,
     values_citizen_eq,
 };
 
@@ -18,8 +18,52 @@ use crate::{
 /// conformance check for each registered `CitizenInfo`. This is the entry
 /// point a test harness calls to assert the whole registered set conforms.
 pub fn run_registered_conformance(cx: &mut Cx) -> Result<()> {
+    let registry = CitizenRegistry::from_inventory()?;
     cx.load_lib(&CitizenLib::all())?;
-    for info in registered_citizens() {
+    run_conformance_rows(cx, registry.citizens())
+}
+
+/// Runs inventory-backed conformance after checking expected symbols.
+///
+/// This is the fail-closed inventory gate for tests that know which citizens a
+/// build must contain. If link-time constructor collection drops a citizen row,
+/// or if a wasm host exposes an empty inventory, the missing expected symbol is
+/// reported before any shorter conformance sweep can pass.
+pub fn run_registered_conformance_expecting(cx: &mut Cx, expected: &[&str]) -> Result<()> {
+    let registry = CitizenRegistry::from_inventory()?;
+    registry.ensure_contains_symbols(expected)?;
+    cx.load_lib(&CitizenLib::all())?;
+    run_conformance_rows(cx, registry.citizens())
+}
+
+/// Loads an explicit registry and runs each row's conformance fixture.
+///
+/// Use this DCE-safe path when a crate can name the citizen types it owns with
+/// [`CitizenRegistry::register`]. The registry itself is loaded as a kernel
+/// library before its fixture hooks run.
+pub fn run_registry_conformance(cx: &mut Cx, registry: &CitizenRegistry) -> Result<()> {
+    cx.load_lib(registry)?;
+    run_conformance_rows(cx, registry.citizens())
+}
+
+/// Runs explicit-registry conformance after checking expected symbols.
+///
+/// This combines the DCE-safe registry path with the same completeness guard
+/// used by [`run_registered_conformance_expecting`].
+pub fn run_registry_conformance_expecting(
+    cx: &mut Cx,
+    registry: &CitizenRegistry,
+    expected: &[&str],
+) -> Result<()> {
+    registry.ensure_contains_symbols(expected)?;
+    run_registry_conformance(cx, registry)
+}
+
+fn run_conformance_rows<'a>(
+    cx: &mut Cx,
+    rows: impl IntoIterator<Item = &'a CitizenInfo>,
+) -> Result<()> {
+    for info in rows {
         (info.conformance)(cx)?;
     }
     Ok(())

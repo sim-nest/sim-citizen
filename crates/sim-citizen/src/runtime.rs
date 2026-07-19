@@ -15,7 +15,7 @@ use sim_kernel::{
     TableRef, Value,
 };
 
-use crate::{arity_error, parse_symbol};
+use crate::{CitizenInfo, arity_error, parse_symbol};
 
 /// Static citizen identity: the metadata `#[derive(Citizen)]` supplies.
 ///
@@ -63,6 +63,25 @@ pub trait Citizen: Clone + Send + Sync + 'static {
 pub trait CitizenRuntime:
     Citizen + Object + sim_kernel::ObjectCompat + ObjectEncode + PartialEq + Debug
 {
+    /// Returns the static registry row for this citizen type.
+    ///
+    /// The derive emits this metadata independently of the inventory row, so a
+    /// crate can register its citizens explicitly with
+    /// [`CitizenRegistry::register`](crate::CitizenRegistry::register) in
+    /// builds where link-time constructor collection is unsuitable.
+    fn citizen_info() -> CitizenInfo;
+    /// Installs this citizen's class into a kernel linker.
+    ///
+    /// The default implementation backs the generated registry row without
+    /// reserving an inherent helper name on the user's type.
+    fn install(linker: &mut sim_kernel::Linker<'_>) -> Result<()>
+    where
+        Self: Sized,
+    {
+        install_derived::<Self>(linker)
+    }
+    /// Runs this citizen's conformance fixture set.
+    fn conformance(cx: &mut Cx) -> Result<()>;
     /// Builds the citizen from decoded constructor argument values.
     fn construct_from_values(cx: &mut Cx, args: Vec<Value>) -> Result<Self>;
     /// Returns the canonical example value used as a conformance fixture.

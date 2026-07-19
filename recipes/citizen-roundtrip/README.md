@@ -1,8 +1,8 @@
 # Citizen Roundtrip Recipe
 
-This runnable recipe derives a `Widget` citizen, lets inventory register its
-metadata, runs the registered conformance sweep, and prints the generated
-citizen census.
+This runnable recipe derives a `Widget` citizen, registers it through an
+explicit `CitizenRegistry`, runs the expected-symbol conformance sweep, and
+prints the generated citizen census.
 
 Run it from the repository root:
 

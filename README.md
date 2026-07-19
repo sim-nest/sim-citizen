@@ -37,8 +37,8 @@ citizen is a public SIM-facing runtime value with a class-backed read
 constructor, constructor encoding, conformance fixture, and census row;
 sim-citizen owns the shared support that registers domain types against the
 kernel's citizen contract -- registry rows, runtime installation helpers,
-fixture checks, generated census rendering, and the semantic equality helpers
-behind the strict citizen gate.
+fixture checks, generated census rendering, completeness checks, and the
+semantic equality helpers behind the strict citizen gate.
 
 Domain types usually opt in with `#[derive(Citizen)]`, which generates that
 support from `#[citizen(...)]` attributes; hard cases register hand-written
@@ -47,11 +47,16 @@ citizens, and live handles carry inline
 exemptions that name their descriptor strategy. Read-construct stays
 capability-gated by the codec/runtime path, not by this layer.
 
+Inventory discovery stays available for ordinary host binaries. Release, LTO,
+and wasm checks can build a `CitizenRegistry` explicitly by naming each citizen
+type, then run the expected-symbol conformance gate so a missing row is reported
+as an error rather than a shorter passing census.
+
 ## Crates
 
 - `sim-citizen` -- the citizen support layer: registry rows, runtime
-  installation, conformance fixtures, field and equality traits, and census and
-  card rendering.
+  installation, explicit registry checks, conformance fixtures, field and
+  equality traits, and census and card rendering.
 - `sim-citizen-derive` -- the proc-macro crate providing `#[derive(Citizen)]`
   and the `#[non_citizen]` exemption attribute, targeting the sim-citizen
   support layer.
@@ -102,9 +107,8 @@ crate to build.
 
 The crates' examples are their rustdoc doctests, the in-crate conformance
 fixtures, and the `recipes/citizen-roundtrip` Cargo recipe. The recipe derives a
-small `Widget` citizen, registers it through the citizen inventory and
-`CitizenLib` installation path, runs registered conformance, and prints the
-generated census row.
+small `Widget` citizen, registers it through an explicit `CitizenRegistry`, runs
+expected-symbol conformance, and prints the generated census row.
 
 Run it from this repository:
 

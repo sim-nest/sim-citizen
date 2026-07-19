@@ -16,6 +16,14 @@ struct CollisionCase {
     value: i64,
 }
 
+impl CollisionCase {
+    fn __sim_citizen_install() {}
+
+    fn __sim_citizen_conformance() {}
+}
+
 fn main() {
     let _ = CollisionCase::citizen_version();
+    CollisionCase::__sim_citizen_install();
+    CollisionCase::__sim_citizen_conformance();
 }

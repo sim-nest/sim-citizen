@@ -10,9 +10,11 @@ use sim_kernel::{
 };
 
 use crate::{
-    CitizenField, CitizenLib, citizen_card, citizen_census_markdown, example::Point,
-    expr_citizen_eq, non_citizen_card, non_citizen_census_markdown, registered_citizens,
-    registered_non_citizens, run_registered_conformance, value_from_expr, value_to_expr,
+    CitizenField, CitizenLib, CitizenRegistry, citizen_card, citizen_census_markdown,
+    citizen_registry_census_markdown, example::Point, expr_citizen_eq, non_citizen_card,
+    non_citizen_census_markdown, registered_citizens, registered_non_citizens,
+    run_registered_conformance, run_registered_conformance_expecting, run_registry_conformance,
+    run_registry_conformance_expecting, value_from_expr, value_to_expr,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, sim_citizen_derive::Citizen)]
@@ -67,6 +69,93 @@ fn point_is_registered_by_inventory() {
 fn point_round_trips_through_conformance() {
     let mut cx = cx();
     run_registered_conformance(&mut cx).unwrap();
+}
+
+#[test]
+fn inventory_conformance_can_require_expected_symbols() {
+    let mut cx = cx();
+    run_registered_conformance_expecting(
+        &mut cx,
+        &["example/Point", "example/Float", "example/FixtureCounter"],
+    )
+    .unwrap();
+}
+
+#[test]
+fn inventory_conformance_fails_when_expected_symbol_is_absent() {
+    let mut cx = cx();
+    let err = run_registered_conformance_expecting(&mut cx, &["example/Missing"])
+        .expect_err("missing expected citizen must fail closed");
+    assert!(matches!(
+        err,
+        Error::HostError(message)
+            if message.contains("citizen registry incomplete")
+                && message.contains("example/Missing")
+    ));
+}
+
+#[test]
+fn explicit_registry_loads_checks_and_renders_without_inventory_lookup() {
+    let mut registry = CitizenRegistry::new();
+    registry.register::<Point>().unwrap();
+    assert_eq!(registry.len(), 1);
+    assert!(!registry.is_empty());
+    assert_eq!(
+        registry.missing_symbols(&["example/Point"]),
+        Vec::<&str>::new()
+    );
+
+    let mut cx = cx();
+    run_registry_conformance_expecting(&mut cx, &registry, &["example/Point"]).unwrap();
+    assert!(
+        cx.registry()
+            .class_by_symbol(&Symbol::qualified("example", "Point"))
+            .is_some()
+    );
+
+    let generated = citizen_registry_census_markdown(&registry);
+    assert!(generated.contains("Total citizens: 1"));
+    assert!(generated.contains("| `example/Point` | 1 | 2 | `sim-citizen` |"));
+}
+
+#[test]
+fn explicit_registry_rejects_duplicate_symbols() {
+    let mut registry = CitizenRegistry::new();
+    registry.register::<Point>().unwrap();
+    let err = registry
+        .register::<Point>()
+        .err()
+        .expect("duplicate explicit citizen must fail closed");
+    assert!(matches!(
+        err,
+        Error::Eval(message)
+            if message.contains("duplicate citizen registration for example/Point")
+    ));
+}
+
+#[test]
+fn explicit_registry_conformance_fails_when_expected_symbol_is_absent() {
+    let mut registry = CitizenRegistry::new();
+    registry.register::<Point>().unwrap();
+
+    let mut cx = cx();
+    let err = run_registry_conformance_expecting(&mut cx, &registry, &["example/Missing"])
+        .expect_err("missing explicit citizen must fail closed");
+    assert!(matches!(
+        err,
+        Error::HostError(message)
+            if message.contains("citizen registry incomplete")
+                && message.contains("example/Missing")
+    ));
+}
+
+#[test]
+fn explicit_registry_conformance_runs_without_expected_list() {
+    let mut registry = CitizenRegistry::new();
+    registry.register::<Point>().unwrap();
+
+    let mut cx = cx();
+    run_registry_conformance(&mut cx, &registry).unwrap();
 }
 
 #[test]

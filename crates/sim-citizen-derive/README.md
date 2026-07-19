@@ -38,6 +38,11 @@ The derive accepts this attribute grammar:
 - Field markers `#[citizen(list)]` and `#[citizen(citizen)]` are rejected. Use
   `Vec<T>`, `Option<T>`, or an explicit `with` codec.
 
+The generated implementation supplies both the inventory row and a
+`CitizenRuntime::citizen_info` metadata hook. Crates that need release, LTO, or
+wasm-safe completeness checks build a `sim_citizen::CitizenRegistry` and call
+`registry.register::<Point>()` for each expected type.
+
 ## Non-Citizen Shape
 
 ```rust

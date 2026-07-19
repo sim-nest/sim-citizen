@@ -1,6 +1,8 @@
 //! Renders the generated census of registered citizens as Markdown.
 
-use crate::{CitizenInfo, NonCitizenInfo, registered_citizens, registered_non_citizens};
+use crate::{
+    CitizenInfo, CitizenRegistry, NonCitizenInfo, registered_citizens, registered_non_citizens,
+};
 
 /// Renders the full census of inventory-registered citizens as Markdown.
 ///
@@ -17,6 +19,15 @@ pub fn citizen_census_markdown() -> String {
         out.push_str(&render_non_citizen_census(&exemptions));
     }
     out
+}
+
+/// Renders the supplied explicit registry's citizens as Markdown.
+///
+/// This is the DCE-safe census path for callers that build a
+/// [`CitizenRegistry`] by naming each citizen type they expect.
+pub fn citizen_registry_census_markdown(registry: &CitizenRegistry) -> String {
+    let citizens = sorted_registry_citizens(registry);
+    render_citizen_census(&citizens)
 }
 
 /// Renders the supplied citizen rows as a generated Markdown census table.
@@ -68,6 +79,16 @@ pub fn render_non_citizen_census(exemptions: &[&NonCitizenInfo]) -> String {
 
 fn sorted_citizens() -> Vec<&'static CitizenInfo> {
     let mut citizens = registered_citizens().collect::<Vec<_>>();
+    citizens.sort_by(|left, right| {
+        left.symbol
+            .cmp(right.symbol)
+            .then_with(|| left.crate_name.cmp(right.crate_name))
+    });
+    citizens
+}
+
+fn sorted_registry_citizens(registry: &CitizenRegistry) -> Vec<&CitizenInfo> {
+    let mut citizens = registry.citizens().collect::<Vec<_>>();
     citizens.sort_by(|left, right| {
         left.symbol
             .cmp(right.symbol)

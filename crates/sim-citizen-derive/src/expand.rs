@@ -1,6 +1,6 @@
 //! Code generation for the Citizen derive macro.
 
-use quote::{format_ident, quote};
+use quote::quote;
 use syn::{Data, DeriveInput, Fields, LitStr};
 
 use crate::attrs::{CitizenAttrs, FieldAttrs};
@@ -77,8 +77,6 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
         .map(|field| field.ident.as_ref().expect("named field"))
         .collect::<Vec<_>>();
 
-    let install_fn = format_ident!("__sim_citizen_install");
-    let conformance_fn = format_ident!("__sim_citizen_conformance");
     let example_body = example.as_ref().map_or_else(
         || quote!(<Self as ::std::default::Default>::default()),
         |path| quote!(#path()),
@@ -166,6 +164,23 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
         }
 
         impl ::sim_citizen::CitizenRuntime for #ident {
+            fn citizen_info() -> ::sim_citizen::CitizenInfo {
+                ::sim_citizen::CitizenInfo {
+                    symbol: #symbol,
+                    version: #version,
+                    crate_name: env!("CARGO_PKG_NAME"),
+                    arity: #field_count,
+                    install: <Self as ::sim_citizen::CitizenRuntime>::install,
+                    conformance: <Self as ::sim_citizen::CitizenRuntime>::conformance,
+                }
+            }
+
+            fn conformance(cx: &mut ::sim_kernel::Cx) -> ::sim_kernel::Result<()> {
+                #conformance_default_check
+                #conformance_fixture_checks
+                Ok(())
+            }
+
             fn construct_from_values(
                 cx: &mut ::sim_kernel::Cx,
                 args: Vec<::sim_kernel::Value>,
@@ -198,24 +213,14 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
         }
 
         const _: () = {
-            fn #install_fn(linker: &mut ::sim_kernel::Linker<'_>) -> ::sim_kernel::Result<()> {
-                ::sim_citizen::install_derived::<#ident>(linker)
-            }
-
-            fn #conformance_fn(cx: &mut ::sim_kernel::Cx) -> ::sim_kernel::Result<()> {
-                #conformance_default_check
-                #conformance_fixture_checks
-                Ok(())
-            }
-
             ::sim_citizen::inventory::submit! {
                 ::sim_citizen::CitizenInfo {
                     symbol: #symbol,
                     version: #version,
                     crate_name: env!("CARGO_PKG_NAME"),
                     arity: #field_count,
-                    install: #install_fn,
-                    conformance: #conformance_fn,
+                    install: <#ident as ::sim_citizen::CitizenRuntime>::install,
+                    conformance: <#ident as ::sim_citizen::CitizenRuntime>::conformance,
                 }
             }
         };
