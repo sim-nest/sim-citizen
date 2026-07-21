@@ -1,0 +1,33 @@
+schema = "sim.features"
+
+[enforcement.audience]
+framework = "strict"
+
+[enforcement.route]
+major_entrypoints = "advisory"
+frameworks = "advisory"
+
+[[feature]]
+id = "feature/sim-citizen/citizen-read-constructs"
+title = "Citizen and read-construct framework"
+summary = "Expose Rust values as runtime citizens with class members, registry rows, and read-construct round trips."
+owner = "crate/sim-citizen"
+audiences = ["code", "framework"]
+guidance = "Use this row when making a Rust type visible as a runtime object or read-construct."
+claims_anchors = [
+  "anchor/crate/sim-citizen",
+  "anchor/runtime-lib/sim-citizen/citizen-lib",
+  "anchor/runtime-lib/sim-citizen/citizen-registry",
+]
+claims_specimens = [
+  "spec-test/sim-citizen/crates/sim-citizen/src/conformance",
+]
+
+[[route]]
+id = "route/add-citizen-read-construct"
+task = "Add a citizen read-construct"
+audiences = ["code", "framework"]
+steps = [
+  { feature = "feature/sim-citizen/citizen-read-constructs", why = "The citizen row owns runtime members and read-construct projection." },
+  { specimen = "spec-test/sim-citizen/crates/sim-citizen/src/conformance", why = "The conformance test checks citizen round-trip behavior." },
+]
