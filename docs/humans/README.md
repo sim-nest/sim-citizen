@@ -17,6 +17,7 @@ This generated lane consumes `docs/generated/sim-index-fragment.sx`. Global inde
 
 | Feature | Subject | Specimens | Summary |
 | --- | --- | ---: | --- |
+| `feature/sim-citizen/generated-docs` | `crate/xtask` | 0 | Publish generated package, card, rustdoc, and index facts for the citizen crates and helper command. |
 | `feature/sim-citizen/citizen-read-constructs` | `crate/sim-citizen` | 1 | Expose Rust values as runtime citizens with class members, registry rows, and read-construct round trips. |
 
 ## Surfaces
