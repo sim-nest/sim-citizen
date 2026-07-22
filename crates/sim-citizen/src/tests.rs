@@ -4,9 +4,10 @@ use std::sync::{
 };
 
 use sim_kernel::{
-    Cx, DefaultFactory, Error, Expr, MatchScore, NoopEvalPolicy, NumberLiteral, ObjectEncode,
-    Shape, ShapeDoc, ShapeMatch, Symbol, Value,
+    Cx, Error, Expr, MatchScore, NumberLiteral, ObjectEncode, Shape, ShapeDoc, ShapeMatch, Symbol,
+    Value,
     card::{Card, card_fixed_predicates},
+    testing::bare_cx as cx,
 };
 
 use crate::{
@@ -507,13 +508,6 @@ fn non_citizen_card_renders_registered_exemption_fields() {
         map_string_field(&entries, "descriptor"),
         Some("example/live-handle")
     );
-}
-
-fn cx() -> Cx {
-    Cx::new(
-        std::sync::Arc::new(NoopEvalPolicy),
-        std::sync::Arc::new(DefaultFactory),
-    )
 }
 
 fn point_class(cx: &Cx) -> Value {
