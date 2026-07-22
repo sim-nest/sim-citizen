@@ -3,10 +3,11 @@
 //! `#[derive(Citizen)]` generates the citizen support for a domain type from its
 //! `#[citizen(...)]` attributes (symbol, version, example/fixture hooks, and
 //! field options), and the
-//! `#[non_citizen]` attribute marks a type as an explicit, descriptor-named
-//! exemption. The generated code targets the `sim-citizen` support layer and
-//! supplies both inventory metadata and an explicit `CitizenRuntime::citizen_info`
-//! hook for `CitizenRegistry` users.
+//! `#[non_citizen]` attribute marks a type as an explicit exemption with either
+//! an explicit descriptor or the type name as its descriptor. The generated code
+//! targets the `sim-citizen` support layer and supplies both inventory metadata
+//! and an explicit `CitizenRuntime::citizen_info` hook for `CitizenRegistry`
+//! users.
 //!
 //! `Citizen` accepts this attribute grammar:
 //!
@@ -57,10 +58,11 @@ pub fn derive_citizen(input: TokenStream) -> TokenStream {
 
 /// Marks a type as an explicit non-citizen exemption.
 ///
-/// Applied as `#[non_citizen(reason = "...", kind = "...", descriptor = "...")]`,
-/// it preserves the input item and emits an inventory row recording that the
-/// type opts out of citizen conformance with a named descriptor strategy,
-/// rather than being silently overlooked.
+/// Applied as `#[non_citizen(reason = "...", kind = "...")]`, with optional
+/// `descriptor = "..."`, it preserves the input item and emits an inventory row
+/// recording that the type opts out of citizen conformance with a named
+/// descriptor strategy rather than being silently overlooked. When omitted, the
+/// descriptor defaults to the item type name.
 #[proc_macro_attribute]
 pub fn non_citizen(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item_ts = proc_macro2::TokenStream::from(item.clone());
@@ -75,7 +77,7 @@ pub fn non_citizen(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
     let reason = attrs.reason;
     let kind = attrs.kind;
-    let descriptor = attrs.descriptor;
+    let descriptor = attrs.descriptor.unwrap_or_else(|| type_name.clone());
     quote::quote! {
         #item_ts
         ::sim_citizen::inventory::submit! {
