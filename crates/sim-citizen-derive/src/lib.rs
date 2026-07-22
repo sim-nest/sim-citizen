@@ -4,10 +4,11 @@
 //! `#[citizen(...)]` attributes (symbol, version, example/fixture hooks, and
 //! field options), and the
 //! `#[non_citizen]` attribute marks a type as an explicit exemption with either
-//! an explicit descriptor or the type name as its descriptor. The generated code
-//! targets the `sim-citizen` support layer and supplies both inventory metadata
-//! and an explicit `CitizenRuntime::citizen_info` hook for `CitizenRegistry`
-//! users.
+//! an explicit descriptor or the type name as its descriptor. When the consuming
+//! crate depends on `sim-citizen`, the generated code submits inventory metadata
+//! to the `sim-citizen` support layer. The `Citizen` derive supplies both
+//! inventory metadata and an explicit `CitizenRuntime::citizen_info` hook for
+//! `CitizenRegistry` users.
 //!
 //! `Citizen` accepts this attribute grammar:
 //!
@@ -62,7 +63,8 @@ pub fn derive_citizen(input: TokenStream) -> TokenStream {
 /// `descriptor = "..."`, it preserves the input item and emits an inventory row
 /// recording that the type opts out of citizen conformance with a named
 /// descriptor strategy rather than being silently overlooked. When omitted, the
-/// descriptor defaults to the item type name.
+/// descriptor defaults to the item type name. If the consuming crate does not
+/// depend on `sim-citizen`, the item is preserved without an inventory row.
 #[proc_macro_attribute]
 pub fn non_citizen(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item_ts = proc_macro2::TokenStream::from(item.clone());
@@ -78,10 +80,13 @@ pub fn non_citizen(attr: TokenStream, item: TokenStream) -> TokenStream {
     let reason = attrs.reason;
     let kind = attrs.kind;
     let descriptor = attrs.descriptor.unwrap_or_else(|| type_name.clone());
+    let Some(sim_citizen) = sim_citizen_crate_path() else {
+        return item_ts.into();
+    };
     quote::quote! {
         #item_ts
-        ::sim_citizen::inventory::submit! {
-            ::sim_citizen::NonCitizenInfo {
+        #sim_citizen::inventory::submit! {
+            #sim_citizen::NonCitizenInfo {
                 type_name: #type_name,
                 crate_name: env!("CARGO_PKG_NAME"),
                 reason: #reason,
@@ -91,4 +96,15 @@ pub fn non_citizen(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
     .into()
+}
+
+fn sim_citizen_crate_path() -> Option<proc_macro2::TokenStream> {
+    match proc_macro_crate::crate_name("sim-citizen") {
+        Ok(proc_macro_crate::FoundCrate::Itself) => Some(quote::quote!(crate)),
+        Ok(proc_macro_crate::FoundCrate::Name(name)) => {
+            let ident = syn::Ident::new(&name.replace('-', "_"), proc_macro2::Span::call_site());
+            Some(quote::quote!(::#ident))
+        }
+        Err(_) => None,
+    }
 }
