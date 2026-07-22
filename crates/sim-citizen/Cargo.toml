@@ -15,7 +15,7 @@ sim-kernel = { version = "0.1.0" }
 sim-value = { version = "0.1.0" }
 
 [dev-dependencies]
-sim-citizen-derive = { version = "0.1.1", path = "../sim-citizen-derive" }
+sim-citizen-derive = { version = "0.1.2", path = "../sim-citizen-derive" }
 sim-kernel = { version = "0.1.0", features = ["test-support"] }
 
 [lints]

@@ -97,7 +97,7 @@ impl FieldAttrs {
 pub(crate) struct NonCitizenAttrs {
     pub(crate) reason: LitStr,
     pub(crate) kind: LitStr,
-    pub(crate) descriptor: LitStr,
+    pub(crate) descriptor: Option<LitStr>,
 }
 
 impl NonCitizenAttrs {
@@ -136,12 +136,7 @@ impl NonCitizenAttrs {
             kind: kind.ok_or_else(|| {
                 syn::Error::new(proc_macro2::Span::call_site(), "missing non_citizen kind")
             })?,
-            descriptor: descriptor.ok_or_else(|| {
-                syn::Error::new(
-                    proc_macro2::Span::call_site(),
-                    "missing non_citizen descriptor",
-                )
-            })?,
+            descriptor,
         })
     }
 }
@@ -248,7 +243,22 @@ mod tests {
         .unwrap();
         assert_eq!(attrs.reason.value(), "runtime-owned state");
         assert_eq!(attrs.kind.value(), "live-handle");
-        assert_eq!(attrs.descriptor.value(), "example/live-handle");
+        assert_eq!(
+            attrs.descriptor.as_ref().unwrap().value(),
+            "example/live-handle"
+        );
+    }
+
+    #[test]
+    fn non_citizen_attrs_accept_missing_descriptor() {
+        let attrs = NonCitizenAttrs::parse(quote::quote!(
+            reason = "runtime-owned state",
+            kind = "live-handle"
+        ))
+        .unwrap();
+        assert_eq!(attrs.reason.value(), "runtime-owned state");
+        assert_eq!(attrs.kind.value(), "live-handle");
+        assert!(attrs.descriptor.is_none());
     }
 
     #[test]
