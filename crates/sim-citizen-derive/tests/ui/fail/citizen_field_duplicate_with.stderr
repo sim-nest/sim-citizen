@@ -1,0 +1,5 @@
+error: duplicate citizen field with
+ --> tests/ui/fail/citizen_field_duplicate_with.rs:8:35
+  |
+8 |     #[citizen(with = first_codec, with = second_codec)]
+  |                                   ^^^^^^^^^^^^^^^^^^^

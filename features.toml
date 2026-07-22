@@ -1,0 +1,67 @@
+schema = "sim.features"
+
+[enforcement.audience]
+code = "strict"
+framework = "strict"
+
+[enforcement.specimen]
+user = "strict"
+framework = "strict"
+code = "advisory"
+
+[enforcement.route]
+major_entrypoints = "advisory"
+frameworks = "advisory"
+
+[[feature]]
+id = "feature/sim-citizen/generated-docs"
+title = "Repository documentation surface"
+summary = "Publish generated package, card, rustdoc, and index facts for the citizen crates and helper command."
+owner = "crate/xtask"
+audiences = ["code"]
+guidance = "Use this row when checking the generated documentation and index lane for citizen support."
+claims_anchors = [
+  "anchor/cli/xtask",
+  "anchor/crate/xtask",
+  "anchor/doc/generated/card-index",
+  "anchor/doc/generated/feature-map",
+  "anchor/doc/generated/provenance",
+  "anchor/doc/generated/repo-contract",
+  "anchor/doc/generated/rustdoc-index",
+  "anchor/doc/generated/sim-index-fragment",
+  "anchor/repo/sim-citizen",
+]
+claims_surfaces = [
+  "cli/xtask",
+  "docs/sim-citizen/generated",
+]
+
+[[feature]]
+id = "feature/sim-citizen/citizen-read-constructs"
+title = "Citizen and read-construct framework"
+summary = "Expose Rust values as runtime citizens with class members, registry rows, and read-construct round trips."
+owner = "crate/sim-citizen"
+audiences = ["code", "framework"]
+guidance = "Use this row when making a Rust type visible as a runtime object or read-construct."
+claims_anchors = [
+  "anchor/cli/citizen-roundtrip",
+  "anchor/crate/citizen-roundtrip",
+  "anchor/crate/sim-citizen",
+  "anchor/crate/sim-citizen-derive",
+  "anchor/export/sim-citizen/citizen/int",
+  "anchor/export/sim-citizen/doc/point",
+  "anchor/runtime-lib/sim-citizen/citizen-lib",
+  "anchor/runtime-lib/sim-citizen/citizen-registry",
+]
+claims_specimens = [
+  "spec-test/sim-citizen/crates/sim-citizen/src/conformance",
+]
+
+[[route]]
+id = "route/add-citizen-read-construct"
+task = "Add a citizen read-construct"
+audiences = ["code", "framework"]
+steps = [
+  { feature = "feature/sim-citizen/citizen-read-constructs", why = "The citizen row owns runtime members and read-construct projection." },
+  { specimen = "spec-test/sim-citizen/crates/sim-citizen/src/conformance", why = "The conformance test checks citizen round-trip behavior." },
+]

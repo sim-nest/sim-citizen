@@ -1,4 +1,9 @@
 {
   "schema": "sim.card-index.v1",
-  "cards": []
+  "cards": [
+    "recipes/citizen-roundtrip/Cargo.toml",
+    "recipes/citizen-roundtrip/README.md",
+    "recipes/citizen-roundtrip/recipe.toml",
+    "recipes/citizen-roundtrip/src/main.rs"
+  ]
 }

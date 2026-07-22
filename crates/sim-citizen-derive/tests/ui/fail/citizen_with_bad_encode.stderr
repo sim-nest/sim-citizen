@@ -1,0 +1,19 @@
+error[E0308]: mismatched types
+  --> tests/ui/fail/citizen_with_bad_encode.rs:5:44
+   |
+ 5 | #[derive(Clone, Debug, Default, PartialEq, Citizen)]
+   |                                            ^^^^^^^
+   |                                            |
+   |                                            expected `i64`, found `&i64`
+   |                                            arguments to this function are incorrect
+   |
+note: function defined here
+  --> tests/ui/fail/citizen_with_bad_encode.rs:15:12
+   |
+15 |     pub fn encode(_value: i64) -> Expr {
+   |            ^^^^^^ -----------
+   = note: this error originates in the derive macro `Citizen` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider using clone here
+   |
+ 5 | #[derive(Clone, Debug, Default, PartialEq, Citizen.clone())]
+   |                                                   ++++++++

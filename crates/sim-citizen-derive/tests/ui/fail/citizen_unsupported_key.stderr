@@ -1,0 +1,5 @@
+error: unsupported citizen attribute
+ --> tests/ui/fail/citizen_unsupported_key.rs:6:59
+  |
+6 | #[citizen(symbol = "example/UnsupportedKey", version = 1, extra = "unexpected")]
+  |                                                           ^^^^^

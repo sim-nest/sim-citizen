@@ -15,7 +15,7 @@ use sim_kernel::{
     TableRef, Value,
 };
 
-use crate::{arity_error, parse_symbol};
+use crate::{CitizenInfo, arity_error, parse_symbol};
 
 /// Static citizen identity: the metadata `#[derive(Citizen)]` supplies.
 ///
@@ -63,6 +63,25 @@ pub trait Citizen: Clone + Send + Sync + 'static {
 pub trait CitizenRuntime:
     Citizen + Object + sim_kernel::ObjectCompat + ObjectEncode + PartialEq + Debug
 {
+    /// Returns the static registry row for this citizen type.
+    ///
+    /// The derive emits this metadata independently of the inventory row, so a
+    /// crate can register its citizens explicitly with
+    /// [`CitizenRegistry::register`](crate::CitizenRegistry::register) in
+    /// builds where link-time constructor collection is unsuitable.
+    fn citizen_info() -> CitizenInfo;
+    /// Installs this citizen's class into a kernel linker.
+    ///
+    /// The default implementation backs the generated registry row without
+    /// reserving an inherent helper name on the user's type.
+    fn install(linker: &mut sim_kernel::Linker<'_>) -> Result<()>
+    where
+        Self: Sized,
+    {
+        install_derived::<Self>(linker)
+    }
+    /// Runs this citizen's conformance fixture set.
+    fn conformance(cx: &mut Cx) -> Result<()>;
     /// Builds the citizen from decoded constructor argument values.
     fn construct_from_values(cx: &mut Cx, args: Vec<Value>) -> Result<Self>;
     /// Returns the canonical example value used as a conformance fixture.
@@ -209,11 +228,11 @@ where
     }
 
     fn constructor_shape(&self, cx: &mut Cx) -> Result<ShapeRef> {
-        cx.factory().nil()
+        any_shape(cx)
     }
 
     fn instance_shape(&self, cx: &mut Cx) -> Result<ShapeRef> {
-        cx.factory().nil()
+        any_shape(cx)
     }
 
     fn read_constructor(&self, cx: &mut Cx) -> Result<Option<ReadConstructorRef>> {
@@ -221,20 +240,12 @@ where
     }
 
     fn members(&self, cx: &mut Cx) -> Result<TableRef> {
-        let fields = T::citizen_fields()
-            .iter()
-            .map(|field| cx.factory().symbol(Symbol::new((*field).to_owned())))
-            .collect::<Result<Vec<_>>>()?;
-        cx.factory().table(vec![
-            (
-                Symbol::new("version"),
-                cx.factory().number_literal(
-                    parse_symbol("citizen/int"),
-                    T::citizen_version().to_string(),
-                )?,
-            ),
-            (Symbol::new("fields"), cx.factory().list(fields)?),
-        ])
+        citizen_metadata_table(
+            cx,
+            T::citizen_version(),
+            T::citizen_arity(),
+            T::citizen_fields(),
+        )
     }
 }
 
@@ -247,7 +258,7 @@ where
     }
 
     fn args_shape(&self, cx: &mut Cx) -> Result<ShapeRef> {
-        cx.factory().nil()
+        any_shape(cx)
     }
 
     fn construct_read(&self, cx: &mut Cx, args: Vec<Value>) -> Result<Value> {
@@ -260,4 +271,40 @@ where
         }
         self.call(cx, Args::new(args))
     }
+}
+
+fn any_shape(cx: &mut Cx) -> Result<ShapeRef> {
+    if let Some(shape) = cx
+        .registry()
+        .shape_by_symbol(&Symbol::qualified("core", "Any"))
+    {
+        Ok(shape.clone())
+    } else {
+        cx.factory().nil()
+    }
+}
+
+fn citizen_metadata_table(
+    cx: &mut Cx,
+    version: u32,
+    arity: usize,
+    fields: &[&str],
+) -> Result<TableRef> {
+    let fields = fields
+        .iter()
+        .map(|field| cx.factory().symbol(Symbol::new((*field).to_owned())))
+        .collect::<Result<Vec<_>>>()?;
+    cx.factory().table(vec![
+        (
+            Symbol::new("version"),
+            cx.factory()
+                .number_literal(parse_symbol("citizen/int"), version.to_string())?,
+        ),
+        (
+            Symbol::new("arity"),
+            cx.factory()
+                .number_literal(parse_symbol("citizen/int"), arity.to_string())?,
+        ),
+        (Symbol::new("fields"), cx.factory().list(fields)?),
+    ])
 }

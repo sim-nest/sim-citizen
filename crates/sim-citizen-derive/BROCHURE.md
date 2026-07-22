@@ -14,4 +14,4 @@ Making a type into a proper SIM value takes a fair amount of repetitive support:
 
 ## Where it fits
 
-This is the companion tool to the sim-citizen support layer. Where that crate holds the shared machinery a hosted value needs, this crate is the proc-macro that produces that machinery for an ordinary domain type from a handful of attributes. Most authors reach for this marker as the everyday way in; the harder cases still write their support by hand against the support crate directly. It generates code and targets that layer, so the two crates are meant to be used together, with this one carrying the load for the common path.
+This is the companion tool to the sim-citizen support layer. Where that crate holds the shared machinery a hosted value needs, this crate is the proc-macro that produces that machinery for an ordinary domain type from a handful of attributes. Most authors reach for this marker as the everyday way in; the harder cases write their support by hand against the support crate directly. It generates code for that layer, so the two crates pair naturally, with this one carrying the load for the common path.

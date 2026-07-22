@@ -37,31 +37,42 @@ citizen is a public SIM-facing runtime value with a class-backed read
 constructor, constructor encoding, conformance fixture, and census row;
 sim-citizen owns the shared support that registers domain types against the
 kernel's citizen contract -- registry rows, runtime installation helpers,
-fixture checks, generated census rendering, and the semantic equality helpers
-behind the strict citizen gate.
+fixture checks, generated census rendering, completeness checks, and the
+semantic equality helpers behind the strict citizen gate.
 
 Domain types usually opt in with `#[derive(Citizen)]`, which generates that
 support from `#[citizen(...)]` attributes; hard cases register hand-written
-citizens, and live handles carry inline `#[non_citizen]` exemptions that name
-their descriptor strategy. Read-construct stays capability-gated by the
-codec/runtime path, not by this layer.
+citizens, and live handles carry inline
+`#[non_citizen(reason = "...", kind = "...", descriptor = "...")]`
+exemptions that name their descriptor strategy. Read-construct stays
+capability-gated by the codec/runtime path, not by this layer.
+
+Inventory discovery stays available for ordinary host binaries. Release, LTO,
+and wasm checks can build a `CitizenRegistry` explicitly by naming each citizen
+type, then run the expected-symbol conformance gate so a missing row is reported
+as an error rather than a shorter passing census.
 
 ## Crates
 
 - `sim-citizen` -- the citizen support layer: registry rows, runtime
-  installation, conformance fixtures, field and equality traits, and census and
-  card rendering.
+  installation, explicit registry checks, conformance fixtures, field and
+  equality traits, and census and card rendering.
 - `sim-citizen-derive` -- the proc-macro crate providing `#[derive(Citizen)]`
   and the `#[non_citizen]` exemption attribute, targeting the sim-citizen
   support layer.
 
 ## Validation
 
-These commands run in the constellation workspace; only `sim-kernel` builds from a lone clone today (see `DEVELOPING.md` in `sim-sdk`). A single-repo build lands with the first crates.io publish.
+Run the standalone crate gates from this repository. These are the same checks
+named by CI and the control-plane manifest:
 
 ```bash
-cargo fmt --check && cargo test --workspace && cargo clippy --workspace -- -D warnings && cargo doc --workspace --no-deps
+cargo fmt --all --check
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 cargo run -p xtask -- simdoc --check
+cargo run -p xtask -- check-file-sizes
 ```
 
 ## Documentation Lanes
@@ -94,8 +105,13 @@ crate to build.
 
 ### Examples and recipes
 
-The crates' examples are their rustdoc doctests, the `example` reference citizen,
-and the in-crate conformance fixtures. Neither crate ships a `recipes/` tree: a
-runnable recipe that exercises a citizen end to end needs a codec and a runtime
-to read-construct and evaluate it, which this support layer does not load.
-Recipes that register and drive citizens live in the crates that load those.
+The crates' examples are their rustdoc doctests, the in-crate conformance
+fixtures, and the `recipes/citizen-roundtrip` Cargo recipe. The recipe derives a
+small `Widget` citizen, registers it through an explicit `CitizenRegistry`, runs
+expected-symbol conformance, and prints the generated census row.
+
+Run it from this repository:
+
+```bash
+cargo run --manifest-path recipes/citizen-roundtrip/Cargo.toml
+```

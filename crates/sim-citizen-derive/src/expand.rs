@@ -1,6 +1,6 @@
 //! Code generation for the Citizen derive macro.
 
-use quote::{format_ident, quote};
+use quote::quote;
 use syn::{Data, DeriveInput, Fields, LitStr};
 
 use crate::attrs::{CitizenAttrs, FieldAttrs};
@@ -25,6 +25,11 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
         .iter()
         .map(|name| LitStr::new(name, proc_macro2::Span::call_site()))
         .collect::<Vec<_>>();
+    let symbol = attrs.symbol;
+    let version = attrs.version;
+    let version_token = format!("v{version}");
+    let example = attrs.example;
+    let fixtures = attrs.fixtures;
 
     let encodes = fields
         .iter()
@@ -72,12 +77,24 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
         .map(|field| field.ident.as_ref().expect("named field"))
         .collect::<Vec<_>>();
 
-    let fn_suffix = snake_case(&ident.to_string());
-    let install_fn = format_ident!("__sim_citizen_install_{}", fn_suffix);
-    let conformance_fn = format_ident!("__sim_citizen_conformance_{}", fn_suffix);
-    let symbol = attrs.symbol;
-    let version = attrs.version;
-    let version_token = format!("v{version}");
+    let example_body = example.as_ref().map_or_else(
+        || quote!(<Self as ::std::default::Default>::default()),
+        |path| quote!(#path()),
+    );
+    let conformance_default_check = example.as_ref().map_or_else(
+        || quote!(::sim_citizen::check_default_fixture::<#ident>(cx)?;),
+        |path| quote!(::sim_citizen::check_fixture(cx, #path())?;),
+    );
+    let conformance_fixture_checks = fixtures.as_ref().map_or_else(
+        || quote!(),
+        |path| {
+            quote! {
+                for __fixture in ::core::iter::IntoIterator::into_iter(#path()) {
+                    ::sim_citizen::check_fixture(cx, __fixture)?;
+                }
+            }
+        },
+    );
 
     Ok(quote! {
         impl ::sim_citizen::Citizen for #ident {
@@ -147,6 +164,23 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
         }
 
         impl ::sim_citizen::CitizenRuntime for #ident {
+            fn citizen_info() -> ::sim_citizen::CitizenInfo {
+                ::sim_citizen::CitizenInfo {
+                    symbol: #symbol,
+                    version: #version,
+                    crate_name: env!("CARGO_PKG_NAME"),
+                    arity: #field_count,
+                    install: <Self as ::sim_citizen::CitizenRuntime>::install,
+                    conformance: <Self as ::sim_citizen::CitizenRuntime>::conformance,
+                }
+            }
+
+            fn conformance(cx: &mut ::sim_kernel::Cx) -> ::sim_kernel::Result<()> {
+                #conformance_default_check
+                #conformance_fixture_checks
+                Ok(())
+            }
+
             fn construct_from_values(
                 cx: &mut ::sim_kernel::Cx,
                 args: Vec<::sim_kernel::Value>,
@@ -174,28 +208,22 @@ pub(crate) fn expand_citizen(input: DeriveInput) -> syn::Result<proc_macro2::Tok
             }
 
             fn example() -> Self {
-                <Self as ::std::default::Default>::default()
+                #example_body
             }
         }
 
-        fn #install_fn(linker: &mut ::sim_kernel::Linker<'_>) -> ::sim_kernel::Result<()> {
-            ::sim_citizen::install_derived::<#ident>(linker)
-        }
-
-        fn #conformance_fn(cx: &mut ::sim_kernel::Cx) -> ::sim_kernel::Result<()> {
-            ::sim_citizen::check_default_fixture::<#ident>(cx)
-        }
-
-        ::sim_citizen::inventory::submit! {
-            ::sim_citizen::CitizenInfo {
-                symbol: #symbol,
-                version: #version,
-                crate_name: env!("CARGO_PKG_NAME"),
-                arity: #field_count,
-                install: #install_fn,
-                conformance: #conformance_fn,
+        const _: () = {
+            ::sim_citizen::inventory::submit! {
+                ::sim_citizen::CitizenInfo {
+                    symbol: #symbol,
+                    version: #version,
+                    crate_name: env!("CARGO_PKG_NAME"),
+                    arity: #field_count,
+                    install: <#ident as ::sim_citizen::CitizenRuntime>::install,
+                    conformance: <#ident as ::sim_citizen::CitizenRuntime>::conformance,
+                }
             }
-        }
+        };
     })
 }
 
@@ -215,19 +243,4 @@ fn named_fields(
             "Citizen derive supports structs",
         )),
     }
-}
-
-fn snake_case(input: &str) -> String {
-    let mut out = String::new();
-    for (index, ch) in input.chars().enumerate() {
-        if ch.is_uppercase() {
-            if index > 0 {
-                out.push('_');
-            }
-            out.extend(ch.to_lowercase());
-        } else {
-            out.push(ch);
-        }
-    }
-    out
 }

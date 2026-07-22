@@ -1,0 +1,5 @@
+error: duplicate non_citizen reason
+ --> tests/ui/fail/non_citizen_duplicate_reason.rs:5:5
+  |
+5 |     reason = "duplicate",
+  |     ^^^^^^^^^^^^^^^^^^^^
