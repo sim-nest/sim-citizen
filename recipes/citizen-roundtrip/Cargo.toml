@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 sim-citizen = { path = "../../crates/sim-citizen" }
 sim-citizen-derive = { path = "../../crates/sim-citizen-derive" }
-sim-kernel = "0.1.0"
+sim-kernel = "0.2.0"
 
 [lints]
 workspace = true
