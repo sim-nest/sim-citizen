@@ -21,7 +21,11 @@ fn widget_example() -> Widget {
 }
 
 fn main() -> sim_kernel::Result<()> {
-    let mut cx = Cx::new(Arc::new(NoopEvalPolicy), Arc::new(DefaultFactory));
+    let mut cx = Cx::new(
+        Arc::new(NoopEvalPolicy),
+        Arc::new(DefaultFactory),
+        sim_kernel::HandleSeed::new(0x964a_9b33_09ce_5027),
+    );
     let mut registry = CitizenRegistry::new();
     registry.register::<Widget>()?;
 
