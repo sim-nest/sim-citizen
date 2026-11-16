@@ -1,28 +1,42 @@
 {
   "api_docs": "target/doc/",
-  "generated_by": "cargo run -p xtask -- simdoc",
-  "generation_timestamp": "2026-07-11T19:41:31+02:00",
+  "execution": {
+    "executable": {
+      "lock_sha256": "de3cf584352514646909797b8454326e8ba4d3d90bf87ed7c3592ae971073678",
+      "package": "simdoc",
+      "source_sha256": "2d07e74da21f25de3089f711cd5451a9c66c7d49e2959882aad21406416671ca",
+      "version": "0.1.0"
+    },
+    "operation": "repo-contract --repo .",
+    "resolver": null,
+    "toolchain": {
+      "cargo": {
+        "commit_hash": "30a34c6821b57de0aaec83a901aca39f88f6778c",
+        "release": "1.96.0"
+      },
+      "rustc": {
+        "commit_hash": "ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96",
+        "release": "1.96.0"
+      }
+    }
+  },
+  "generation_timestamp": "2026-09-29T20:00:41+02:00",
   "generator": "xtask repo-contract v1",
-  "git_commit": "d99d95b70464f6293a4d4afed22caaeb346e9514",
+  "git_commit": "27c5a7465e701ef93aca96dee193a42f5c80a61d",
+  "regeneration_command": "cargo run -p xtask -- simdoc",
   "repo": "sim-citizen",
   "schema": "sim.provenance.v1",
-  "source_commit": "d99d95b70464f6293a4d4afed22caaeb346e9514",
+  "source_commit": "27c5a7465e701ef93aca96dee193a42f5c80a61d",
   "source_remote": "https://github.com/sim-nest/sim-citizen",
   "validation_commands": [
-    "cargo fmt --all --check",
-    "cargo test",
-    "cargo clippy --all-targets -- -D warnings",
-    "cargo doc --no-deps",
-    "cargo run -p xtask -- simdoc --check",
-    "cargo run -p xtask -- check-file-sizes",
-    "cargo run -p xtask -- repo-contract --check --repo .",
-    "cargo run -p xtask -- validation-matrix --check --repo .",
-    "cargo run -p xtask -- crate-catalog --check --repo ."
+    "cargo run -p xtask -- simdoc --check"
   ],
-  "workspace_hash": "872e063f22d8a5df",
+  "workspace_hash": "0c0ac7aa48474584",
   "workspace_hash_algorithm": "fnv1a64",
-  "workspace_hash_input_count": 41,
+  "workspace_hash_input_count": 45,
   "workspace_hash_inputs": [
+    ".github/workflows/authorship.yml",
+    ".github/workflows/ci.yml",
     "Cargo.toml",
     "crates/sim-citizen/Cargo.toml",
     "crates/sim-citizen/src/card.rs",
@@ -63,6 +77,8 @@
     "features.toml",
     "recipes/citizen-roundtrip/Cargo.toml",
     "recipes/citizen-roundtrip/recipe.toml",
-    "xtask/Cargo.toml"
+    "recipes/citizen-roundtrip/src/main.rs",
+    "xtask/Cargo.toml",
+    "xtask/src/main.rs"
   ]
 }

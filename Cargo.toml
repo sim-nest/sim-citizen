@@ -16,3 +16,6 @@ homepage = "https://github.com/sim-nest/sim-citizen"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+
+[workspace.metadata.sim]
+docs-command = "cargo run -p xtask -- simdoc"
